@@ -10,9 +10,7 @@
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
   <h1 class="text-3xl font-extrabold">Luqy Store</h1>
-  <a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">
-    🔐 Login Admin
-  </a>
+  <a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">🔐 Login Admin</a>
 </header>
 
 <div class="max-w-6xl mx-auto p-6">
@@ -33,13 +31,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
   authDomain: "luqqy-store.firebaseapp.com",
   projectId: "luqqy-store",
-  storageBucket: "luqqy-store.appspot.com",
+  storageBucket: "luqqy-store.firebasestorage.app",
   messagingSenderId: "157194853674",
-  appId: "1:157194853674:web:936fac43307d852fedd253"
+  appId: "1:157194853674:web:936fac43307d852fedd253",
+  measurementId: "G-934QRS9WKR"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -48,10 +48,11 @@ const db = getFirestore(app);
 const produkEl = document.getElementById("produk");
 const searchEl = document.getElementById("search");
 const sortEl = document.getElementById("sort");
+
 let allProduk = [];
 
-async function loadProduk(){
-  const q = sortEl.value==="terlaris"
+async function loadProduk() {
+  const q = sortEl.value === "terlaris"
     ? query(collection(db,"produk"), orderBy("klik","desc"))
     : query(collection(db,"produk"), orderBy("createdAt","desc"));
 
@@ -60,15 +61,22 @@ async function loadProduk(){
   renderProduk();
 }
 
-function renderProduk(){
+function renderProduk() {
   const keyword = searchEl.value.toLowerCase();
-  const kategoriMap = { skincare:{title:"💄 Skincare", items:[]}, fashion:{title:"👜 Fashion", items:[]}, home:{title:"🏠 Home & Living", items:[]} };
-  allProduk.filter(p=>p.nama?.toLowerCase().includes(keyword)).forEach(p=>kategoriMap[p.kategori]?.items.push(p));
+  const kategoriMap = { skincare:{title:"💄 Skincare Favorit",items:[]}, fashion:{title:"👜 Fashion Pilihan",items:[]}, home:{title:"🏠 Home & Living",items:[]} };
+
+  allProduk.filter(p=>p.nama.toLowerCase().includes(keyword)).forEach(p=> kategoriMap[p.kategori]?.items.push(p));
+
   produkEl.innerHTML="";
+
   Object.values(kategoriMap).forEach(cat=>{
     if(!cat.items.length) return;
-    const section=document.createElement("details"); section.className="mb-8"; section.innerHTML=`<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${cat.title}</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
+
+    const section=document.createElement("details");
+    section.className="mb-8";
+    section.innerHTML=`<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${cat.title}</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
     const grid=section.querySelector("div");
+
     cat.items.forEach(p=>{
       const card=document.createElement("div");
       card.className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
@@ -77,21 +85,24 @@ function renderProduk(){
           <img src="${p.gambar||'https://via.placeholder.com/400x400?text=Luqy+Store'}" class="w-full h-44 object-cover"/>
         </div>
         <h3 class="font-bold text-pink-700">${p.nama}</h3>
-        <p class="text-sm text-gray-500 mb-2">${p.deskripsi||''}</p>
+        <p class="text-sm text-gray-500 mb-2">${p.deskripsi||""}</p>
         <p class="text-xs text-gray-400 mb-2">Klik: ${p.klik||0}</p>
-        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">🛍️ Beli Sekarang</a>
+        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">Beli Sekarang</a>
       `;
-      card.querySelector("a").onclick=async()=>{
-        try{ await updateDoc(doc(db,"produk",p.id),{klik:increment(1)});}catch(e){console.warn(e);}
-      };
       grid.appendChild(card);
+
+      // HITUNG KLIK
+      card.querySelector("a").onclick = async ()=>{
+        try{ await updateDoc(doc(db,"produk",p.id),{ klik: increment(1) }); } catch(e){console.warn(e);}
+      };
     });
+
     produkEl.appendChild(section);
   });
 }
 
-searchEl.addEventListener("input",renderProduk);
-sortEl.addEventListener("change",loadProduk);
+searchEl.addEventListener("input", renderProduk);
+sortEl.addEventListener("change", loadProduk);
 
 loadProduk();
 </script>
