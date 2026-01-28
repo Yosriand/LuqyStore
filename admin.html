@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+messagingSenderId: "157194853674",
+appId: "1:157194853674:web:936fac43307d852fedd253",
+measurementId: "G-934QRS9WKR"
+};
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+
+let produk = [];
+let editId = null;
+
+
+window.login = () => signInWithEmailAndPassword(auth, email.value, password.value)
+.catch(e => alert(e.message));
+
+
+window.resetPassword = () => {
+if (!email.value) return alert('Masukkan email');
+sendPasswordResetEmail(auth, email.value)
+.then(() => alert('Link reset dikirim ke email'))
+.catch(e => alert(e.message));
+};
+
+
+window.logout = () => signOut(auth);
+
+
+onAuthStateChanged(auth, user => {
+if (user) {
+loginBox.classList.add('hidden');
+dashboard.classList.remove('hidden');
+load();
+} else {
+loginBox.classList.remove('hidden');
+dashboard.classList.add('hidden');
+}
+});
+
+
+async function load() {
+const snap = await getDocs(collection(db, 'produk'));
+produk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+render();
+}
+
+
+window.simpan = async () => {
+const data = {
+nama: nama.value,
+deskripsi: deskripsi.value,
+gambar: gambar.value,
+link: link.value,
+kategori: kategori.value,
+klik: 0,
+createdAt: serverTimestamp()
+};
+
+
+if (editId) await updateDoc(doc(db, 'produk', editId), data);
+else await addDoc(collection(db, 'produk'), data);
+
+
+editId = null;
+nama.value = deskripsi.value = gambar.value = link.value = kategori.value = '';
+load();
+};
+
+
+function render() {
+list.innerHTML = '';
+produk.forEach(p => {
+list.innerHTML += `
+<div class='bg-white p-4 rounded-xl shadow mb-4'>
+<b>${p.nama}</b> | Klik: ${p.klik || 0}
+<div class='mt-2 flex gap-2'>
+<button onclick="hapus('${p.id}')" class='bg-rose-500 text-white px-3 rounded'>Hapus</button>
+</div>
+</div>`;
+});
+}
+
+
+window.hapus = async (id) => {
+if (confirm('Hapus produk?')) {
+await deleteDoc(doc(db, 'produk', id));
+load();
+}
+};
+</script>
+</body>
+</html>
