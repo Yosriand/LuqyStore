@@ -4,10 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Luqqy Store</title>
-<meta name="description" content="Luqqy Store - Produk affiliate terbaik: skincare, fashion, home living">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-pink-50 min-h-screen">
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
@@ -18,8 +16,6 @@
 </header>
 
 <div class="max-w-6xl mx-auto p-6">
-
-  <!-- SEARCH & SORT -->
   <div class="flex flex-col md:flex-row gap-4 mb-6">
     <input id="search" placeholder="🔍 Cari produk..." class="flex-1 p-3 rounded-full border focus:outline-pink-300"/>
     <select id="sort" class="p-3 rounded-full border">
@@ -27,24 +23,15 @@
       <option value="terlaris">🔥 Terlaris</option>
     </select>
   </div>
-
-  <!-- PRODUK -->
   <div id="produk"></div>
 </div>
 
-<footer class="text-center text-sm text-pink-400 py-6">
-  © Luqqy Store
-</footer>
+<footer class="text-center text-sm text-pink-400 py-6">© Luqqy Store</footer>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore, collection, getDocs,
-  doc, updateDoc, increment,
-  query, orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, increment, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
   authDomain: "luqqy-store.firebaseapp.com",
@@ -63,98 +50,54 @@ const sortEl = document.getElementById("sort");
 
 let allProduk = [];
 
-/* ================= OPTIMASI GAMBAR AFFILIATE ================= */
-function affiliateImage(url) {
-  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=image.url&meta=false&screenshot=false`;
+function loadProduk() {
+  const q = sortEl.value==="terlaris" ? query(collection(db,"produk"),orderBy("klik","desc"))
+                                     : query(collection(db,"produk"),orderBy("createdAt","desc"));
+  getDocs(q).then(snap => {
+    allProduk = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderProduk();
+  });
 }
 
-/* ================= LOAD PRODUK ================= */
-async function loadProduk() {
-  const q = sortEl.value === "terlaris"
-    ? query(collection(db, "produk"), orderBy("klik", "desc"))
-    : query(collection(db, "produk"), orderBy("createdAt", "desc"));
-
-  const snap = await getDocs(q);
-  allProduk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderKategoriLazy();
-}
-
-/* ================= RENDER KATEGORI (LAZY) ================= */
-function renderKategoriLazy() {
+function renderProduk() {
   const keyword = searchEl.value.toLowerCase();
   const kategoriMap = {
-    skincare: { title: "💄 Skincare Favorit", items: [] },
-    fashion: { title: "👜 Fashion Pilihan", items: [] },
-    home: { title: "🏠 Home & Living", items: [] }
+    skincare:{title:"💄 Skincare Favorit", items:[]},
+    fashion:{title:"👜 Fashion Pilihan", items:[]},
+    home:{title:"🏠 Home & Living", items:[]}
   };
-
-  allProduk
-    .filter(p => p.nama?.toLowerCase().includes(keyword))
-    .forEach(p => kategoriMap[p.kategori]?.items.push(p));
+  allProduk.filter(p=>p.nama.toLowerCase().includes(keyword)).forEach(p=>{
+    kategoriMap[p.kategori]?.items.push(p);
+  });
 
   produkEl.innerHTML = "";
-
-  Object.entries(kategoriMap).forEach(([key, cat]) => {
-    if (!cat.items.length) return;
-
+  Object.values(kategoriMap).forEach(cat=>{
+    if(!cat.items.length) return;
     const details = document.createElement("details");
-    details.className = "mb-8";
-    details.innerHTML = `<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${cat.title}</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
-    
+    details.className="mb-8";
+    details.innerHTML=`<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${cat.title}</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
     const grid = details.querySelector("div");
-
-    // Lazy load saat kategori dibuka
-    details.addEventListener("toggle", () => {
-      if (details.open && grid.childElementCount === 0) {
-        cat.items.forEach(p => {
-          const card = document.createElement("div");
-          card.className = "bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
-
-          card.innerHTML = `
-            <div class="overflow-hidden rounded-xl mb-3 bg-pink-100">
-              <img src="${affiliateImage(p.link)}"
-                loading="lazy"
-                referrerpolicy="no-referrer"
-                onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'"
-                class="w-full h-44 object-cover">
-            </div>
-            <h3 class="font-bold text-pink-700">${p.nama}</h3>
-            <p class="text-sm text-gray-500 mb-4">${p.deskripsi || ""}</p>
-            <a href="${p.link}" target="_blank" data-id="${p.id}"
-              class="beli block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">
-              🛍️ Beli Sekarang
-            </a>
-          `;
-          grid.appendChild(card);
-        });
-
-        // Attach click untuk hitung klik
-        grid.querySelectorAll(".beli").forEach(btn => {
-          btn.addEventListener("click", () => hitungKlik(btn.dataset.id));
-        });
-      }
+    cat.items.forEach(p=>{
+      const card = document.createElement("div");
+      card.className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
+      const img = p.gambar || "https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store";
+      card.innerHTML=`<div class="rounded-xl overflow-hidden mb-3 bg-pink-100"><img src="${img}" class="w-full h-44 object-cover" /></div>
+        <h3 class="font-bold text-pink-700">${p.nama}</h3>
+        <p class="text-sm text-gray-500 mb-4">${p.deskripsi||""}</p>
+        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition" onclick="klik('${p.id}')">🛍️ Beli Sekarang</a>`;
+      grid.appendChild(card);
     });
-
     produkEl.appendChild(details);
   });
 }
 
-/* ================= HITUNG KLIK ================= */
-async function hitungKlik(id) {
-  try {
-    await updateDoc(doc(db, "produk", id), { klik: increment(1) });
-  } catch (e) {
-    console.warn("Klik gagal dicatat");
-  }
-}
+window.klik = async id => {
+  try { await updateDoc(doc(db,"produk",id),{klik:increment(1)}); } catch(e){ console.warn(e); }
+};
 
-/* ================= EVENT ================= */
-searchEl.addEventListener("input", renderKategoriLazy);
+searchEl.addEventListener("input", renderProduk);
 sortEl.addEventListener("change", loadProduk);
-
-/* ================= INIT ================= */
 loadProduk();
 </script>
-
 </body>
 </html>
