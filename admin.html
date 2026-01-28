@@ -18,19 +18,28 @@
   <!-- LOGIN -->
   <div id="loginBox" class="bg-white p-6 rounded-xl shadow">
     <h2 class="text-xl font-bold mb-4 text-pink-600">Login Admin</h2>
-    <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2"/>
-    <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-4"/>
-    <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">
+
+    <input id="email" type="email" placeholder="Email"
+      class="w-full border p-2 rounded mb-2"/>
+
+    <input id="password" type="password" placeholder="Password"
+      class="w-full border p-2 rounded mb-4"/>
+
+    <button id="loginBtn"
+      class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">
       Login
     </button>
-    <button id="resetBtn" class="text-sm text-pink-500 underline w-full">
+
+    <button id="resetBtn"
+      class="text-sm text-pink-500 underline w-full mb-2">
       Lupa password?
     </button>
-    <button id="backToVisitor"
-      class="w-full mt-2 border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50">
-      ← Kembali ke Toko
-    </button>
 
+    <!-- ✅ KEMBALI KE VISITOR -->
+    <button id="backToVisitor"
+      class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50 transition">
+      ← Kembali ke Luqqy Store
+    </button>
   </div>
 
   <!-- DASHBOARD -->
@@ -44,10 +53,14 @@
     <div class="bg-white p-6 rounded-xl shadow mb-6">
       <h2 class="font-bold mb-4">Tambah Produk</h2>
 
-      <input id="nama" placeholder="Nama Produk" class="w-full border p-2 rounded mb-2">
-      <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
-      <input id="gambar" placeholder="URL Gambar" class="w-full border p-2 rounded mb-2">
-      <input id="link" placeholder="Link Affiliate" class="w-full border p-2 rounded mb-2">
+      <input id="nama" placeholder="Nama Produk"
+        class="w-full border p-2 rounded mb-2">
+
+      <textarea id="deskripsi" placeholder="Deskripsi"
+        class="w-full border p-2 rounded mb-2"></textarea>
+
+      <input id="link" placeholder="Link Affiliate"
+        class="w-full border p-2 rounded mb-2">
 
       <select id="kategori" class="w-full border p-2 rounded mb-4">
         <option value="">Pilih Kategori</option>
@@ -64,7 +77,6 @@
 
     <div id="list"></div>
   </div>
-
 </div>
 
 <!-- ================= JAVASCRIPT ================= -->
@@ -79,7 +91,7 @@ import {
   sendPasswordResetEmail, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-/* 🔥 FIREBASE CONFIG (PUNYA KAMU) */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
   authDomain: "luqqy-store.firebaseapp.com",
@@ -94,6 +106,18 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+/* ================= ELEMENT ================= */
+const loginBox = document.getElementById("loginBox");
+const dashboard = document.getElementById("dashboard");
+const list = document.getElementById("list");
+
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const nama = document.getElementById("nama");
+const deskripsi = document.getElementById("deskripsi");
+const link = document.getElementById("link");
+const kategori = document.getElementById("kategori");
+
 /* ================= LOGIN ================= */
 document.getElementById("loginBtn").addEventListener("click", () => {
   signInWithEmailAndPassword(auth, email.value, password.value)
@@ -107,13 +131,15 @@ document.getElementById("loginBtn").addEventListener("click", () => {
 
 /* ================= RESET PASSWORD ================= */
 document.getElementById("resetBtn").addEventListener("click", () => {
-  if (!email.value) {
-    alert("Masukkan email dulu");
-    return;
-  }
+  if (!email.value) return alert("Masukkan email dulu");
   sendPasswordResetEmail(auth, email.value)
     .then(() => alert("📧 Link reset password dikirim ke email"))
     .catch(err => alert(err.message));
+});
+
+/* ================= BACK TO VISITOR ================= */
+document.getElementById("backToVisitor").addEventListener("click", () => {
+  window.location.href = "index.html";
 });
 
 /* ================= LOGOUT ================= */
@@ -138,6 +164,7 @@ onAuthStateChanged(auth, user => {
 async function loadProduk() {
   const snap = await getDocs(collection(db, "produk"));
   list.innerHTML = "";
+
   snap.forEach(d => {
     const p = d.data();
     list.innerHTML += `
@@ -150,27 +177,31 @@ async function loadProduk() {
   });
 
   document.querySelectorAll("[data-id]").forEach(btn => {
-    btn.onclick = async () => {
+    btn.addEventListener("click", async () => {
       if (confirm("Hapus produk?")) {
         await deleteDoc(doc(db, "produk", btn.dataset.id));
         loadProduk();
       }
-    };
+    });
   });
 }
 
+/* ================= SIMPAN ================= */
 document.getElementById("simpanBtn").addEventListener("click", async () => {
   await addDoc(collection(db, "produk"), {
     nama: nama.value,
     deskripsi: deskripsi.value,
-    gambar: gambar.value,
     link: link.value,
     kategori: kategori.value,
     klik: 0,
     createdAt: serverTimestamp()
   });
 
-  nama.value = deskripsi.value = gambar.value = link.value = kategori.value = "";
+  nama.value = "";
+  deskripsi.value = "";
+  link.value = "";
+  kategori.value = "";
+
   loadProduk();
 });
 </script>
