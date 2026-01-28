@@ -1,95 +1,189 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Luqqy Store</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luqqy Store</title>
+  <meta name="description" content="Luqqy Store - Rekomendasi produk affiliate terbaik: skincare, fashion, dan home living">
+
+  <!-- Tailwind CDN (aman untuk tahap ini) -->
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-pink-50">
 
+<body class="bg-pink-50 min-h-screen">
 
-<header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 flex justify-between items-center shadow">
-<div>
-<h1 class="text-3xl font-extrabold">Luqqy Store</h1>
-<p class="text-sm">Affiliate Picks Favorit ✨</p>
-</div>
-<a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full shadow">Login Admin</a>
+<!-- ================= HEADER ================= -->
+<header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
+  <h1 class="text-3xl font-extrabold">Luqqy Store</h1>
+  <a href="admin.html"
+     class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">
+    🔐 Login Admin
+  </a>
 </header>
 
-
+<!-- ================= SEARCH & SORT ================= -->
 <div class="max-w-6xl mx-auto p-6">
-<input id="search" placeholder="🔍 Cari produk..." onkeyup="render()"
-class="w-full mb-6 p-3 rounded-full border shadow" />
+  <div class="flex flex-col md:flex-row gap-4 mb-6">
+    <input
+      id="search"
+      placeholder="🔍 Cari produk favoritmu..."
+      class="flex-1 p-3 rounded-full border focus:outline-pink-300"
+    />
 
+    <select id="sort" class="p-3 rounded-full border">
+      <option value="terbaru">🆕 Terbaru</option>
+      <option value="terlaris">🔥 Terlaris</option>
+    </select>
+  </div>
 
-<select id="sort" onchange="render()" class="mb-6 p-2 rounded border">
-<option value="baru">🆕 Terbaru</option>
-<option value="laris">🔥 Terlaris</option>
-</select>
-
-
-<div id="content"></div>
+  <!-- ================= PRODUK ================= -->
+  <div id="produk"></div>
 </div>
 
+<footer class="text-center text-sm text-pink-400 py-6">
+  © Luqqy Store
+</footer>
 
+<!-- ================= SCRIPT ================= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  increment,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-
+/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
-apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
-authDomain: "luqqy-store.firebaseapp.com",
-projectId: "luqqy-store",
-storageBucket: "luqqy-store.firebasestorage.app",
-messagingSenderId: "157194853674",
-appId: "1:157194853674:web:936fac43307d852fedd253",
-measurementId: "G-934QRS9WKR"
+  apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
+  authDomain: "luqqy-store.firebaseapp.com",
+  projectId: "luqqy-store",
+  storageBucket: "luqqy-store.firebasestorage.app",
+  messagingSenderId: "157194853674",
+  appId: "1:157194853674:web:936fac43307d852fedd253",
+  measurementId: "G-934QRS9WKR"
 };
-
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* ================= ELEMENT ================= */
+const produkEl = document.getElementById("produk");
+const searchEl = document.getElementById("search");
+const sortEl = document.getElementById("sort");
 
-const kategoriMap = {
-skincare: '💄 Skincare Favorit',
-fashion: '👜 Fashion Pilihan',
-home: '🏠 Home & Living'
+let allProduk = [];
+
+/* ================= OPTIMASI GAMBAR AFFILIATE =================
+   - Tidak upload gambar
+   - Tidak pakai Firebase Storage
+   - Gambar otomatis dari link Shopee / Tokopedia / dll
+*/
+function affiliateImage(url) {
+  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=image.url&meta=false&screenshot=false`;
+}
+
+/* ================= LOAD PRODUK ================= */
+async function loadProduk() {
+  const q =
+    sortEl.value === "terlaris"
+      ? query(collection(db, "produk"), orderBy("klik", "desc"))
+      : query(collection(db, "produk"), orderBy("createdAt", "desc"));
+
+  const snap = await getDocs(q);
+  allProduk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderProduk();
+}
+
+/* ================= RENDER PRODUK ================= */
+function renderProduk() {
+  const keyword = searchEl.value.toLowerCase();
+
+  const kategoriMap = {
+    skincare: { title: "💄 Skincare Favorit", items: [] },
+    fashion: { title: "👜 Fashion Pilihan", items: [] },
+    home: { title: "🏠 Home & Living", items: [] }
+  };
+
+  allProduk
+    .filter(p => p.nama.toLowerCase().includes(keyword))
+    .forEach(p => kategoriMap[p.kategori]?.items.push(p));
+
+  produkEl.innerHTML = "";
+
+  Object.values(kategoriMap).forEach(cat => {
+    if (!cat.items.length) return;
+
+    const section = document.createElement("details");
+    section.open = true;
+    section.className = "mb-8";
+
+    section.innerHTML = `
+      <summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">
+        ${cat.title}
+      </summary>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>
+    `;
+
+    const grid = section.querySelector("div");
+
+    cat.items.forEach(p => {
+      const card = document.createElement("div");
+      card.className =
+        "bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
+
+      card.innerHTML = `
+        <div class="relative overflow-hidden rounded-xl mb-3 bg-pink-100">
+          <img
+            src="${affiliateImage(p.link)}"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            onerror="this.src='https://via.placeholder.com/400x400?text=Luqqy+Store'"
+            class="w-full h-44 object-cover"
+          />
+        </div>
+
+        <h3 class="font-bold text-pink-700">${p.nama}</h3>
+        <p class="text-sm text-gray-500 mb-4">${p.deskripsi || ""}</p>
+
+        <a href="${p.link}"
+           target="_blank"
+           class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition"
+           onclick="klikProduk('${p.id}')">
+           🛍️ Beli Sekarang
+        </a>
+      `;
+
+      grid.appendChild(card);
+    });
+
+    produkEl.appendChild(section);
+  });
+}
+
+/* ================= HITUNG KLIK ================= */
+window.klikProduk = async id => {
+  try {
+    await updateDoc(doc(db, "produk", id), {
+      klik: increment(1)
+    });
+  } catch (e) {
+    console.warn("Gagal update klik", e);
+  }
 };
 
+/* ================= EVENT ================= */
+searchEl.addEventListener("input", renderProduk);
+sortEl.addEventListener("change", loadProduk);
 
-let produk = [];
+/* ================= INIT ================= */
+loadProduk();
+</script>
 
-
-async function load() {
-const snap = await getDocs(collection(db, 'produk'));
-produk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-render();
-}
-
-
-async function klik(id) {
-await updateDoc(doc(db, 'produk', id), { klik: increment(1) });
-}
-
-
-window.render = function () {
-const q = search.value.toLowerCase();
-const s = sort.value;
-content.innerHTML = '';
-
-
-Object.keys(kategoriMap).forEach(kat => {
-let items = produk.filter(p => p.kategori === kat && p.nama.toLowerCase().includes(q));
-if (!items.length) return;
-
-
-if (s === 'laris') items.sort((a, b) => (b.klik || 0) - (a.klik || 0));
-else items.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
-
-
-const section = document.createElement('section');
-section.innerHTML = `<h2 class='text-xl font-bold text-pink-600 mb-4'>${kategoriMap[kat]}</h2>`;
+</body>
 </html>
