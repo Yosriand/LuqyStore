@@ -1,197 +1,100 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Link Favorit Aku ✨</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: #fff;
-      color: #333;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 420px;
-      padding: 30px 20px 50px;
-    }
-
-    .profile {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .profile img {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 10px;
-    }
-
-    .profile h1 {
-      font-size: 22px;
-      margin: 0;
-      font-weight: 600;
-    }
-
-    .profile p {
-      font-size: 14px;
-      color: #777;
-    }
-
-    /* BIG TITLE / CATEGORY */
-    .category {
-      margin-bottom: 16px;
-    }
-
-    .category-title {
-      width: 100%;
-      padding: 18px;
-      border-radius: 16px;
-      background: #f8f8f8;
-      border: none;
-      font-size: 16px;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-
-    .category-title:hover {
-      background: #ffe4ef;
-      transform: translateY(-2px);
-    }
-
-    .category-links {
-      display: none;
-      margin-top: 10px;
-      padding-left: 6px;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .link {
-      display: block;
-      padding: 14px 16px;
-      border-radius: 14px;
-      background: #fafafa;
-      text-decoration: none;
-      color: #333;
-      font-size: 14px;
-      transition: all 0.25s ease;
-    }
-
-    .link:hover {
-      background: #ffe4ef;
-      transform: translateY(-2px);
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 40px;
-      font-size: 12px;
-      color: #888;
-    }
-      .search-box {
-      width: 100%;
-      padding: 14px 16px;
-      border-radius: 14px;
-      border: 1px solid #eee;
-      font-size: 14px;
-      margin-top: 16px;
-      outline: none;
-      transition: 0.3s;
-    }
-
-    .search-box:focus {
-      border-color: #f3a6c8;
-      box-shadow: 0 0 0 3px rgba(243,166,200,0.3);
-    }
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Luqqy Store</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-pink-50">
 
-<div class="container">
 
-  <div class="profile">
-    <img src="https://via.placeholder.com/150" alt="profile" />
-    <h1>@LuqyStore</h1>
-    <p>Rekomendasi jujur & favorit aku 🤍</p>
+<header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 flex justify-between items-center shadow">
+<div>
+<h1 class="text-3xl font-extrabold">Luqqy Store</h1>
+<p class="text-sm">Affiliate Picks Favorit ✨</p>
+</div>
+<a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full shadow">Login Admin</a>
+</header>
 
-    <input type="text" id="searchInput" placeholder="Cari produk favoritmu…" onkeyup="searchProduct()" class="search-box" />
-  </div>
 
-  <!-- CATEGORY 1 -->
-  <div class="category">
-    <button class="category-title" onclick="toggleCategory('skincare')">💄 Skincare Favorit</button>
-    <div class="category-links" id="skincare">
-      <a href="#" class="link" target="_blank">✨ Serum wajah favorit</a>
-      <a href="#" class="link" target="_blank">🧴 Moisturizer harian</a>
-      <a href="#" class="link" target="_blank">🫧 Facial wash lembut</a>
-    </div>
-  </div>
+<div class="max-w-6xl mx-auto p-6">
+<input id="search" placeholder="🔍 Cari produk..." onkeyup="render()"
+class="w-full mb-6 p-3 rounded-full border shadow" />
 
-  <!-- CATEGORY 2 -->
-  <div class="category">
-    <button class="category-title" onclick="toggleCategory('fashion')">👜 Fashion Pilihan</button>
-    <div class="category-links" id="fashion">
-      <a href="#" class="link" target="_blank">👗 Dress favorit</a>
-      <a href="#" class="link" target="_blank">👜 Tas harian</a>
-    </div>
-  </div>
 
-  <!-- CATEGORY 3 -->
-  <div class="category">
-    <button class="category-title" onclick="toggleCategory('home')">🏠 Home & Living</button>
-    <div class="category-links" id="home">
-      <a href="#" class="link" target="_blank">🍳 Alat dapur praktis</a>
-      <a href="#" class="link" target="_blank">🛏️ Perlengkapan kamar</a>
-    </div>
-  </div>
+<select id="sort" onchange="render()" class="mb-6 p-2 rounded border">
+<option value="baru">🆕 Terbaru</option>
+<option value="laris">🔥 Terlaris</option>
+</select>
 
-  <footer>
-    *Beberapa link adalah affiliate 💗
-  </footer>
 
+<div id="content"></div>
 </div>
 
-<script>
-  function toggleCategory(id) {
-    const el = document.getElementById(id);
-    el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
-  }
-  function toggleCategory(id) {
-    const el = document.getElementById(id);
-    el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
-  }
 
-  function searchProduct() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
-    const categories = document.querySelectorAll('.category');
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    categories.forEach(cat => {
-      let found = false;
-      const links = cat.querySelectorAll('.link');
-      links.forEach(link => {
-        if (link.innerText.toLowerCase().includes(input)) {
-          link.style.display = 'block';
-          found = true;
-        } else {
-          link.style.display = 'none';
-        }
-      });
 
-      const content = cat.querySelector('.category-links');
-      content.style.display = found ? 'flex' : 'none';
-    });
-  }
-</script>
+const firebaseConfig = {
+apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
+authDomain: "luqqy-store.firebaseapp.com",
+projectId: "luqqy-store",
+storageBucket: "luqqy-store.firebasestorage.app",
+messagingSenderId: "157194853674",
+appId: "1:157194853674:web:936fac43307d852fedd253",
+measurementId: "G-934QRS9WKR"
+};
 
-</body>
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+
+const kategoriMap = {
+skincare: '💄 Skincare Favorit',
+fashion: '👜 Fashion Pilihan',
+home: '🏠 Home & Living'
+};
+
+
+let produk = [];
+
+
+async function load() {
+const snap = await getDocs(collection(db, 'produk'));
+produk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+render();
+}
+
+
+async function klik(id) {
+await updateDoc(doc(db, 'produk', id), { klik: increment(1) });
+}
+
+
+window.render = function () {
+const q = search.value.toLowerCase();
+const s = sort.value;
+content.innerHTML = '';
+
+
+Object.keys(kategoriMap).forEach(kat => {
+let items = produk.filter(p => p.kategori === kat && p.nama.toLowerCase().includes(q));
+if (!items.length) return;
+
+
+if (s === 'laris') items.sort((a, b) => (b.klik || 0) - (a.klik || 0));
+else items.sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
+
+
+const section = document.createElement('section');
+section.innerHTML = `<h2 class='text-xl font-bold text-pink-600 mb-4'>${kategoriMap[kat]}</h2>`;
+
+
+items.forEach(p => {
+section.innerHTML += `
+<div class='bg-white p-4 rounded-xl shadow mb-4'>
 </html>
