@@ -6,7 +6,6 @@
 <title>Admin Luqqy Store</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-pink-50 min-h-screen">
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 text-center shadow">
@@ -19,16 +18,11 @@
   <div id="loginBox" class="bg-white p-6 rounded-xl shadow">
     <h2 class="text-xl font-bold mb-4 text-pink-600">Login Admin</h2>
 
-    <input id="email" type="email" placeholder="Email"
-      class="w-full border p-2 rounded mb-2"/>
-    <input id="password" type="password" placeholder="Password"
-      class="w-full border p-2 rounded mb-4"/>
-    <button id="loginBtn"
-      class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Login</button>
-    <button id="resetBtn"
-      class="text-sm text-pink-500 underline w-full mb-2">Lupa password?</button>
-    <button id="backToVisitor"
-      class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50">
+    <input id="email" type="email" placeholder="Email *" class="w-full border p-2 rounded mb-2"/>
+    <input id="password" type="password" placeholder="Password *" class="w-full border p-2 rounded mb-4"/>
+    <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Login</button>
+    <button id="resetBtn" class="text-sm text-pink-500 underline w-full mb-2">Lupa password?</button>
+    <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50">
       ← Kembali ke Luqqy Store
     </button>
   </div>
@@ -36,16 +30,17 @@
   <!-- DASHBOARD -->
   <div id="dashboard" class="hidden">
 
-    <button id="logoutBtn"
-      class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
+    <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
 
-    <!-- FORM TAMBAH PRODUK -->
+    <!-- TAMBAH PRODUK -->
     <div class="bg-white p-6 rounded-xl shadow mb-6">
       <h2 class="font-bold mb-4">Tambah Produk</h2>
 
       <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2">
-      <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
+      <textarea id="deskripsi" placeholder="Deskripsi *" class="w-full border p-2 rounded mb-2"></textarea>
       <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2">
+      <input id="gambar" placeholder="URL Gambar (opsional)" class="w-full border p-2 rounded mb-2">
+
       <select id="kategori" class="w-full border p-2 rounded mb-4">
         <option value="">Pilih Kategori *</option>
         <option value="skincare">💄 Skincare</option>
@@ -53,30 +48,19 @@
         <option value="home">🏠 Home & Living</option>
       </select>
 
-      <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full">
-        Simpan Produk
-      </button>
+      <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full">Simpan Produk</button>
     </div>
 
-    <!-- LIST PRODUK TERPOSTING -->
-    <div class="bg-white p-6 rounded-xl shadow">
-      <h2 class="font-bold mb-4 text-pink-600">Produk Terposting</h2>
-      <div id="list"></div>
-    </div>
-
+    <!-- DAFTAR PRODUK -->
+    <h2 class="font-bold mb-2 text-pink-600">Produk Terposting</h2>
+    <div id="list" class="mb-6"></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs,
-  deleteDoc, doc, query, where, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import {
-  getAuth, signInWithEmailAndPassword,
-  sendPasswordResetEmail, onAuthStateChanged, signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 /* FIREBASE CONFIG */
 const firebaseConfig = {
@@ -92,7 +76,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* ELEMENT */
+/* ELEMENTS */
 const loginBox = document.getElementById("loginBox");
 const dashboard = document.getElementById("dashboard");
 const list = document.getElementById("list");
@@ -103,9 +87,11 @@ const nama = document.getElementById("nama");
 const deskripsi = document.getElementById("deskripsi");
 const link = document.getElementById("link");
 const kategori = document.getElementById("kategori");
+const gambar = document.getElementById("gambar");
 
 /* LOGIN */
 loginBtn.onclick = () => {
+  if (!email.value || !password.value) return alert("Email & Password wajib diisi");
   signInWithEmailAndPassword(auth, email.value, password.value)
     .catch(err => alert("Login gagal: " + err.message));
 };
@@ -114,19 +100,20 @@ loginBtn.onclick = () => {
 resetBtn.onclick = () => {
   if (!email.value) return alert("Masukkan email");
   sendPasswordResetEmail(auth, email.value)
-    .then(() => alert("📧 Email reset terkirim"));
+    .then(() => alert("📧 Email reset terkirim"))
+    .catch(err => alert(err.message));
 };
 
-/* BACK */
-backToVisitor.onclick = () => location.href = "index.html";
+/* BACK TO VISITOR */
+backToVisitor.onclick = () => location.href="index.html";
 
 /* LOGOUT */
 logoutBtn.onclick = async () => {
   await signOut(auth);
-  location.href = "index.html";
+  location.href="index.html";
 };
 
-/* AUTH */
+/* AUTH STATE */
 onAuthStateChanged(auth, user => {
   if (user) {
     loginBox.classList.add("hidden");
@@ -142,64 +129,55 @@ onAuthStateChanged(auth, user => {
 async function loadProduk() {
   list.innerHTML = "";
   const snap = await getDocs(collection(db, "produk"));
-  
   snap.forEach(d => {
     const p = d.data();
     list.innerHTML += `
-      <div class="bg-pink-50 p-3 rounded mb-2 flex justify-between items-center border">
+      <div class="bg-white p-4 rounded-xl shadow mb-3 flex justify-between items-center">
         <div>
-          <b>${p.nama}</b> (${p.kategori})<br>
-          <a href="${p.link}" target="_blank" class="text-blue-500 underline">${p.link}</a>
+          <b>${p.nama}</b> <span class="text-gray-500 text-sm">(${p.kategori})</span><br>
+          ${p.deskripsi || ""} <br>
+          <a href="${p.link}" target="_blank" class="text-pink-500 underline text-sm">${p.link}</a>
         </div>
         <button onclick="hapus('${d.id}')" class="text-red-500 text-sm">Hapus</button>
-      </div>`;
+      </div>
+    `;
   });
 }
 
 /* HAPUS PRODUK */
 window.hapus = async id => {
-  if (confirm("Hapus produk?")) {
-    await deleteDoc(doc(db, "produk", id));
-    loadProduk();
-  }
+  if (!confirm("Hapus produk?")) return;
+  await deleteDoc(doc(db, "produk", id));
+  loadProduk();
 };
 
 /* SIMPAN PRODUK */
 simpanBtn.onclick = async () => {
-  // Mandatory validation
-  if (!nama.value.trim() || !link.value.trim() || !kategori.value.trim()) {
-    alert("❌ Nama, Link, dan Kategori wajib diisi!");
+  if (!nama.value || !deskripsi.value || !link.value || !kategori.value) {
+    alert("❌ Nama, Deskripsi, Link & Kategori wajib diisi");
     return;
   }
 
-  // Cek duplikasi (nama + link)
-  const q = query(collection(db, "produk"),
-                  where("nama", "==", nama.value.trim()),
-                  where("link", "==", link.value.trim()));
+  // CEK DUPLIKASI
+  const q = query(collection(db, "produk"), 
+    where("nama", "==", nama.value.trim()));
   const snap = await getDocs(q);
-  if (!snap.empty) {
-    alert("❌ Produk dengan nama dan link yang sama sudah ada!");
-    return;
-  }
+  if (!snap.empty) return alert("❌ Produk dengan nama sama sudah ada");
 
-  try {
-    await addDoc(collection(db, "produk"), {
-      nama: nama.value.trim(),
-      deskripsi: deskripsi.value.trim(),
-      link: link.value.trim(),
-      kategori: kategori.value,
-      klik: 0,
-      createdAt: serverTimestamp()
-    });
+  await addDoc(collection(db, "produk"), {
+    nama: nama.value.trim(),
+    deskripsi: deskripsi.value.trim(),
+    link: link.value.trim(),
+    kategori: kategori.value,
+    gambar: gambar.value.trim() || "",
+    klik: 0,
+    createdAt: serverTimestamp()
+  });
 
-    alert("✅ Produk berhasil disimpan");
-    nama.value = deskripsi.value = link.value = kategori.value = "";
-    loadProduk();
-  } catch(e) {
-    alert("❌ Gagal simpan: " + e.message);
-  }
+  alert("✅ Produk berhasil disimpan");
+  nama.value = deskripsi.value = link.value = kategori.value = gambar.value = "";
+  loadProduk();
 };
 </script>
-
 </body>
 </html>
