@@ -71,7 +71,23 @@ let allProduk = [];
 
 /* ================= GAMBAR AFFILIATE ================= */
 function affiliateImage(url) {
-  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=image.url&meta=false&screenshot=false`;
+  try {
+    const host = new URL(url).hostname;
+
+    if (host.includes("shopee")) {
+      return "https://cf.shopee.co.id/file/sg-11134201-23010-default";
+    }
+
+    if (host.includes("tokopedia")) {
+      return "https://images.tokopedia.net/img/cache/500-square/default-product.png";
+    }
+
+    if (host.includes("tiktok")) {
+      return "https://lf16-tiktok-web.ttwstatic.com/obj/tiktok-web/tiktok/web/node/_next/static/images/share-img.png";
+    }
+  } catch (e) {}
+
+  return "https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store";
 }
 
 /* ================= LOAD PRODUK ================= */
