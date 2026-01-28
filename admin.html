@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin Luqqy Store</title>
+<title>Admin Luqy Store</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-pink-50 min-h-screen">
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 text-center shadow">
-  <h1 class="text-3xl font-extrabold">Admin Luqqy Store</h1>
+  <h1 class="text-3xl font-extrabold">Admin Luqy Store</h1>
 </header>
 
 <div class="max-w-4xl mx-auto p-6">
@@ -21,7 +21,7 @@
     <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-4"/>
     <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2 hover:bg-pink-600 transition">Login</button>
     <button id="resetBtn" class="text-sm text-pink-500 underline w-full mb-2 hover:text-pink-600">Lupa password?</button>
-    <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50 transition">← Kembali ke Luqqy Store</button>
+    <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50 transition">← Kembali ke Luqy Store</button>
   </div>
 
   <!-- DASHBOARD -->
@@ -58,9 +58,9 @@ import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, o
 /* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
-  authDomain: "luqqy-store.firebaseapp.com",
-  projectId: "luqqy-store",
-  storageBucket: "luqqy-store.appspot.com",
+  authDomain: "Luqy-store.firebaseapp.com",
+  projectId: "Luqy-store",
+  storageBucket: "Luqy-store.appspot.com",
   messagingSenderId: "157194853674",
   appId: "1:157194853674:web:936fac43307d852fedd253"
 };
@@ -161,7 +161,7 @@ async function loadProdukAdmin(){
       card.className="bg-white rounded-2xl shadow p-4";
       card.innerHTML=`
         <div class="overflow-hidden rounded-xl mb-2 bg-pink-100">
-          <img src="${p.gambar||'https://via.placeholder.com/400x400?text=Luqqy+Store'}" class="w-full h-40 object-cover"/>
+          <img src="${p.gambar||'https://via.placeholder.com/400x400?text=Luqy+Store'}" class="w-full h-40 object-cover"/>
         </div>
         <b>${p.nama}</b>
         <p class="text-sm text-gray-500 mb-2">${p.deskripsi||''}</p>
@@ -204,3 +204,4 @@ async function loadProdukAdmin(){
 </script>
 </body>
 </html>
+
