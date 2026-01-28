@@ -35,7 +35,7 @@
       <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2"/>
       <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
       <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2"/>
-      <input id="gambar" type="file" accept="image/*" class="w-full border p-2 rounded mb-2"/>
+      <input id="gambar" placeholder="URL Gambar" class="w-full border p-2 rounded mb-2"/>
       <select id="kategori" class="w-full border p-2 rounded mb-4">
         <option value="">Pilih Kategori *</option>
         <option value="skincare">💄 Skincare</option>
@@ -54,7 +54,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 /* FIREBASE CONFIG */
 const firebaseConfig = {
@@ -68,7 +67,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const auth = getAuth(app);
 
 /* ELEMENT */
@@ -150,7 +148,7 @@ async function loadProduk(){
       deskripsi.value=docData.deskripsi;
       link.value=docData.link;
       kategori.value=docData.kategori;
-      gambar.value=null;
+      gambar.value=docData.gambar || "";
       simpanBtn.dataset.editId=btn.dataset.id;
     }
   });
@@ -163,21 +161,12 @@ simpanBtn.onclick=async ()=>{
     return;
   }
 
-  let imageUrl="";
-  if(gambar.files.length>0){
-    const file=gambar.files[0];
-    if(file.size>500*1024){ alert("❌ Ukuran gambar max 500KB"); return;}
-    const storageRef=ref(storage,"produk/"+Date.now()+"_"+file.name);
-    await uploadBytes(storageRef,file);
-    imageUrl=await getDownloadURL(storageRef);
-  }
-
   const data={
     nama:nama.value,
     deskripsi:deskripsi.value,
     link:link.value,
     kategori:kategori.value,
-    gambar:imageUrl,
+    gambar:gambar.value || "",
     klik:0,
     createdAt:serverTimestamp()
   };
@@ -191,8 +180,7 @@ simpanBtn.onclick=async ()=>{
       await addDoc(collection(db,"produk"),data);
       alert("✅ Produk berhasil disimpan");
     }
-    nama.value=deskripsi.value=link.value=kategori.value="";
-    gambar.value=null;
+    nama.value=deskripsi.value=link.value=kategori.value=gambar.value="";
     loadProduk();
   }catch(e){ alert("❌ Gagal simpan: "+e.message);}
 };
