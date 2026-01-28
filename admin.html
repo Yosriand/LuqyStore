@@ -6,7 +6,6 @@
 <title>Admin Luqqy Store</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-pink-50 min-h-screen">
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 text-center shadow">
@@ -18,10 +17,8 @@
   <!-- LOGIN -->
   <div id="loginBox" class="bg-white p-6 rounded-xl shadow">
     <h2 class="text-xl font-bold mb-4 text-pink-600">Login Admin</h2>
-
     <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2"/>
     <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-4"/>
-
     <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Login</button>
     <button id="resetBtn" class="text-sm text-pink-500 underline w-full mb-2">Lupa password?</button>
     <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50">
@@ -34,10 +31,8 @@
 
     <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
 
-    <!-- TAMBAH PRODUK -->
     <div class="bg-white p-6 rounded-xl shadow mb-6">
       <h2 class="font-bold mb-4">Tambah Produk</h2>
-
       <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2"/>
       <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
       <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2"/>
@@ -47,13 +42,10 @@
         <option value="fashion">👜 Fashion</option>
         <option value="home">🏠 Home & Living</option>
       </select>
-
       <input id="gambar" placeholder="URL Gambar (opsional)" class="w-full border p-2 rounded mb-4"/>
-
       <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full">Simpan Produk</button>
     </div>
 
-    <!-- PREVIEW PRODUK PER KATEGORI -->
     <div id="produkList"></div>
   </div>
 </div>
@@ -91,22 +83,16 @@ const kategori = document.getElementById("kategori");
 const gambar = document.getElementById("gambar");
 
 /* LOGIN */
-loginBtn.onclick = () => {
-  signInWithEmailAndPassword(auth, email.value, password.value)
-    .catch(err=>alert("Login gagal: "+err.message));
-};
+loginBtn.onclick = () => signInWithEmailAndPassword(auth,email.value,password.value).catch(err=>alert("Login gagal: "+err.message));
 
 /* RESET PASSWORD */
-resetBtn.onclick = () => {
-  if(!email.value) return alert("Masukkan email");
-  sendPasswordResetEmail(auth,email.value).then(()=>alert("📧 Email reset terkirim"));
-};
+resetBtn.onclick = ()=> { if(!email.value) return alert("Masukkan email"); sendPasswordResetEmail(auth,email.value).then(()=>alert("📧 Email reset terkirim")); };
 
 /* BACK TO VISITOR */
-backToVisitor.onclick = () => location.href="index.html";
+backToVisitor.onclick = ()=> location.href="index.html";
 
 /* LOGOUT */
-logoutBtn.onclick = async () => { await signOut(auth); location.href="index.html"; };
+logoutBtn.onclick = async()=>{await signOut(auth); location.href="index.html";};
 
 /* AUTH STATE */
 onAuthStateChanged(auth,user=>{
@@ -114,7 +100,7 @@ onAuthStateChanged(auth,user=>{
     loginBox.classList.add("hidden");
     dashboard.classList.remove("hidden");
     loadProdukPreview();
-  }else{
+  } else {
     loginBox.classList.remove("hidden");
     dashboard.classList.add("hidden");
   }
@@ -122,16 +108,13 @@ onAuthStateChanged(auth,user=>{
 
 /* SIMPAN PRODUK */
 simpanBtn.onclick = async ()=>{
-  if(!nama.value || !link.value || !kategori.value){
-    alert("❌ Nama, Link & Kategori wajib diisi");
-    return;
-  }
+  if(!nama.value || !link.value || !kategori.value){ alert("❌ Nama, Link & Kategori wajib diisi"); return; }
   await addDoc(collection(db,"produk"),{
     nama:nama.value,
     deskripsi:deskripsi.value,
     link:link.value,
     kategori:kategori.value,
-    gambar:gambar.value || "", // opsional
+    gambar:gambar.value || "",
     klik:0,
     createdAt:serverTimestamp()
   });
@@ -139,32 +122,32 @@ simpanBtn.onclick = async ()=>{
   loadProdukPreview();
 };
 
-/* LOAD PRODUK PER KATEGORI (LAZY LOAD) */
+/* LAZY LOAD PREVIEW PER KATEGORI */
 async function loadProdukPreview(){
   const snap = await getDocs(collection(db,"produk"));
   const allProduk = snap.docs.map(d=>({id:d.id,...d.data()}));
-
   const kategoriMap = {skincare:[],fashion:[],home:[]};
   allProduk.forEach(p=>{ if(kategoriMap[p.kategori]) kategoriMap[p.kategori].push(p); });
 
   produkList.innerHTML="";
   Object.entries(kategoriMap).forEach(([key,items])=>{
     if(items.length===0) return;
-
-    const details = document.createElement("details");
+    const details=document.createElement("details");
     details.className="mb-4 border border-pink-200 rounded-xl bg-white shadow";
     details.innerHTML=`<summary class="cursor-pointer font-bold text-pink-600 p-3">${key.toUpperCase()} (${items.length})</summary>
       <div class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>`;
     const grid = details.querySelector("div");
 
-    // lazy load saat expand
     details.addEventListener("toggle",()=>{
       if(details.open && grid.children.length===0){
         items.forEach(p=>{
-          const card = document.createElement("div");
+          const card=document.createElement("div");
           card.className="bg-white p-3 rounded-xl shadow";
-          const imgSrc = p.gambar || "https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store";
-          card.innerHTML=`<div class="mb-2 rounded-xl overflow-hidden"><img src="${imgSrc}" class="w-full h-36 object-cover"/></div>
+          let imgSrc = p.gambar;
+          if(!imgSrc && p.link) imgSrc = `https://api.microlink.io/?url=${encodeURIComponent(p.link)}&embed=image.url&meta=false&screenshot=false`;
+          if(!imgSrc) imgSrc="https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store";
+
+          card.innerHTML=`<div class="mb-2 rounded-xl overflow-hidden"><img src="${imgSrc}" class="w-full h-36 object-cover" onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'"/></div>
             <h3 class="font-bold text-pink-700">${p.nama}</h3>
             <p class="text-sm text-gray-500 mb-2">${p.deskripsi||""}</p>
             <a href="${p.link}" target="_blank" class="block bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full text-center font-semibold">Lihat Produk</a>
@@ -173,7 +156,6 @@ async function loadProdukPreview(){
         });
       }
     });
-
     produkList.appendChild(details);
   });
 }
