@@ -1,60 +1,36 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Luqqy Store</title>
-  <meta name="description" content="Luqqy Store - Rekomendasi produk affiliate terbaik">
-
-  <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Luqqy Store</title>
+<script src="https://cdn.tailwindcss.com"></script>
 </head>
-
 <body class="bg-pink-50 min-h-screen">
 
-<!-- ================= HEADER ================= -->
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
-  <h1 class="text-3xl font-extrabold">Luqqy Store</h1>
-  <a href="admin.html"
-     class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">
-    🔐 Login Admin
-  </a>
+<h1 class="text-3xl font-extrabold">Luqqy Store</h1>
+<a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">🔐 Login Admin</a>
 </header>
 
-<!-- ================= SEARCH & SORT ================= -->
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col md:flex-row gap-4 mb-6">
-    <input id="search"
-      placeholder="🔍 Cari produk favoritmu..."
-      class="flex-1 p-3 rounded-full border focus:outline-pink-300"/>
-
+    <input id="search" placeholder="🔍 Cari produk..." class="flex-1 p-3 rounded-full border"/>
     <select id="sort" class="p-3 rounded-full border">
       <option value="terbaru">🆕 Terbaru</option>
       <option value="terlaris">🔥 Terlaris</option>
     </select>
   </div>
 
-  <!-- ================= PRODUK ================= -->
-  <div id="produk" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>
+  <div id="produk"></div>
 </div>
 
-<footer class="text-center text-sm text-pink-400 py-6">
-  © Luqqy Store
-</footer>
+<footer class="text-center text-sm text-pink-400 py-6">© Luqqy Store</footer>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  updateDoc,
-  increment,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, updateDoc, increment, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
   authDomain: "luqqy-store.firebaseapp.com",
@@ -67,87 +43,72 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ================= ELEMENT ================= */
 const produkEl = document.getElementById("produk");
 const searchEl = document.getElementById("search");
 const sortEl = document.getElementById("sort");
 
 let allProduk = [];
 
-/* ================= GAMBAR AFFILIATE ================= */
-function affiliateImage(url) {
-  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=image.url&meta=false&screenshot=false`;
+function renderProduk() {
+  const keyword = searchEl.value.toLowerCase();
+
+  const kategoriMap = {
+    skincare: { title: "💄 Skincare Favorit", items: [] },
+    fashion: { title: "👜 Fashion Pilihan", items: [] },
+    home: { title: "🏠 Home & Living", items: [] }
+  };
+
+  allProduk.filter(p => p.nama.toLowerCase().includes(keyword))
+           .forEach(p => kategoriMap[p.kategori]?.items.push(p));
+
+  produkEl.innerHTML = "";
+
+  Object.values(kategoriMap).forEach(cat => {
+    if (!cat.items.length) return;
+
+    const section = document.createElement("section");
+    section.className = "mb-10";
+
+    section.innerHTML = `<h2 class="font-bold text-xl text-pink-600 mb-4">${cat.title}</h2>
+                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
+
+    const grid = section.querySelector("div");
+
+    cat.items.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
+      card.innerHTML = `
+        <div class="rounded-xl overflow-hidden mb-3 bg-pink-100">
+          <img src="${p.gambar || 'https://via.placeholder.com/400x400?text=Luqqy+Store'}"
+            loading="lazy"
+            class="w-full h-44 object-cover"/>
+        </div>
+        <h3 class="font-bold text-pink-700">${p.nama}</h3>
+        <p class="text-sm text-gray-500 mb-4">${p.deskripsi || ""}</p>
+        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">🛍️ Beli Sekarang</a>
+      `;
+      grid.appendChild(card);
+    });
+
+    produkEl.appendChild(section);
+  });
 }
 
-/* ================= LOAD PRODUK ================= */
 async function loadProduk() {
-  const q =
-    sortEl.value === "terlaris"
-      ? query(collection(db, "produk"), orderBy("klik", "desc"))
-      : query(collection(db, "produk"), orderBy("createdAt", "desc"));
+  const q = sortEl.value === "terlaris"
+    ? query(collection(db, "produk"), orderBy("klik", "desc"))
+    : query(collection(db, "produk"), orderBy("createdAt", "desc"));
 
   const snap = await getDocs(q);
   allProduk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   renderProduk();
 }
 
-/* ================= RENDER PRODUK ================= */
-function renderProduk() {
-  const keyword = searchEl.value.toLowerCase();
-  produkEl.innerHTML = "";
-
-  allProduk
-    .filter(p => p.nama.toLowerCase().includes(keyword))
-    .forEach(p => {
-      const card = document.createElement("div");
-      card.className = "bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
-
-      card.innerHTML = `
-        <div class="relative overflow-hidden rounded-xl mb-3 bg-pink-100">
-          <img
-            src="${affiliateImage(p.link)}"
-            loading="lazy"
-            referrerpolicy="no-referrer"
-            onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'"
-            class="w-full h-44 object-cover"
-          />
-        </div>
-
-        <h3 class="font-bold text-pink-700 mb-1">${p.nama}</h3>
-        <p class="text-sm text-gray-500 mb-3">${p.deskripsi || ""}</p>
-
-        <a href="${p.link}" target="_blank"
-           data-id="${p.id}"
-           class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">
-           🛍️ Beli Sekarang
-        </a>
-      `;
-
-      produkEl.appendChild(card);
-    });
-
-  // Tambahkan event klik untuk update klik produk
-  document.querySelectorAll("a[data-id]").forEach(btn => {
-    btn.addEventListener("click", () => hitungKlik(btn.dataset.id));
-  });
-}
-
-/* ================= HITUNG KLIK ================= */
-async function hitungKlik(id) {
-  try {
-    await updateDoc(doc(db, "produk", id), { klik: increment(1) });
-  } catch (e) {
-    console.warn("Klik gagal dicatat", e);
-  }
-}
-
-/* ================= EVENT ================= */
 searchEl.addEventListener("input", renderProduk);
 sortEl.addEventListener("change", loadProduk);
 
-/* ================= INIT ================= */
 loadProduk();
-
 </script>
+
 </body>
 </html>
