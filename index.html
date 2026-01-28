@@ -10,12 +10,12 @@
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
   <h1 class="text-3xl font-extrabold">Luqy Store</h1>
-  <a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">🔐 Login Admin</a>
+  <a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full hover:bg-pink-100 transition">🔐 Admin</a>
 </header>
 
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col md:flex-row gap-4 mb-6">
-    <input id="search" placeholder="🔍 Cari produk favoritmu..." class="flex-1 p-3 rounded-full border focus:outline-pink-300"/>
+    <input id="search" placeholder="🔍 Cari produk..." class="flex-1 p-3 rounded-full border focus:outline-pink-300"/>
     <select id="sort" class="p-3 rounded-full border">
       <option value="terbaru">🆕 Terbaru</option>
       <option value="terlaris">🔥 Terlaris</option>
@@ -51,8 +51,9 @@ const sortEl = document.getElementById("sort");
 
 let allProduk = [];
 
-async function loadProduk() {
-  const q = sortEl.value === "terlaris"
+/* LOAD PRODUK */
+async function loadProduk(){
+  const q = sortEl.value==="terlaris"
     ? query(collection(db,"produk"), orderBy("klik","desc"))
     : query(collection(db,"produk"), orderBy("createdAt","desc"));
 
@@ -61,17 +62,16 @@ async function loadProduk() {
   renderProduk();
 }
 
-function renderProduk() {
+/* RENDER */
+function renderProduk(){
   const keyword = searchEl.value.toLowerCase();
-  const kategoriMap = { skincare:{title:"💄 Skincare Favorit",items:[]}, fashion:{title:"👜 Fashion Pilihan",items:[]}, home:{title:"🏠 Home & Living",items:[]} };
+  const kategoriMap = {skincare:{title:"💄 Skincare",items:[]}, fashion:{title:"👜 Fashion",items:[]}, home:{title:"🏠 Home & Living",items:[]}};
 
-  allProduk.filter(p=>p.nama.toLowerCase().includes(keyword)).forEach(p=> kategoriMap[p.kategori]?.items.push(p));
-
+  allProduk.filter(p=>p.nama?.toLowerCase().includes(keyword)).forEach(p=> kategoriMap[p.kategori]?.items.push(p));
   produkEl.innerHTML="";
 
   Object.values(kategoriMap).forEach(cat=>{
     if(!cat.items.length) return;
-
     const section=document.createElement("details");
     section.className="mb-8";
     section.innerHTML=`<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${cat.title}</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
@@ -85,15 +85,14 @@ function renderProduk() {
           <img src="${p.gambar||'https://via.placeholder.com/400x400?text=Luqy+Store'}" class="w-full h-44 object-cover"/>
         </div>
         <h3 class="font-bold text-pink-700">${p.nama}</h3>
-        <p class="text-sm text-gray-500 mb-2">${p.deskripsi||""}</p>
+        <p class="text-sm text-gray-500 mb-2">${p.deskripsi||''}</p>
         <p class="text-xs text-gray-400 mb-2">Klik: ${p.klik||0}</p>
-        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">Beli Sekarang</a>
+        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">🛍️ Beli Sekarang</a>
       `;
       grid.appendChild(card);
 
-      // HITUNG KLIK
-      card.querySelector("a").onclick = async ()=>{
-        try{ await updateDoc(doc(db,"produk",p.id),{ klik: increment(1) }); } catch(e){console.warn(e);}
+      card.querySelector("a").onclick = async()=>{
+        try{ await updateDoc(doc(db,"produk",p.id),{klik: increment(1)}); }catch(e){}
       };
     });
 
@@ -104,6 +103,7 @@ function renderProduk() {
 searchEl.addEventListener("input", renderProduk);
 sortEl.addEventListener("change", loadProduk);
 
+/* INIT */
 loadProduk();
 </script>
 </body>
