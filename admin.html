@@ -29,31 +29,31 @@
 
     <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
 
+    <!-- TAMBAH PRODUK -->
     <div class="bg-white p-6 rounded-xl shadow mb-6">
       <h2 class="font-bold mb-4">Tambah / Edit Produk</h2>
-
-      <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2"/>
+      <input id="nama" placeholder="Nama Produk" class="w-full border p-2 rounded mb-2"/>
       <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
-      <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2"/>
+      <input id="link" placeholder="Link Affiliate" class="w-full border p-2 rounded mb-2"/>
       <input id="gambar" placeholder="URL Gambar" class="w-full border p-2 rounded mb-2"/>
       <select id="kategori" class="w-full border p-2 rounded mb-4">
-        <option value="">Pilih Kategori *</option>
+        <option value="">Pilih Kategori</option>
         <option value="skincare">💄 Skincare</option>
         <option value="fashion">👜 Fashion</option>
         <option value="home">🏠 Home & Living</option>
       </select>
-      <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Simpan Produk</button>
+      <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full">Simpan Produk</button>
     </div>
 
-    <!-- Preview Produk -->
-    <div id="list"></div>
+    <!-- DAFTAR PRODUK -->
+    <div id="produkList"></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, increment, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 /* FIREBASE CONFIG */
 const firebaseConfig = {
@@ -72,7 +72,8 @@ const auth = getAuth(app);
 /* ELEMENT */
 const loginBox = document.getElementById("loginBox");
 const dashboard = document.getElementById("dashboard");
-const list = document.getElementById("list");
+const produkList = document.getElementById("produkList");
+
 const email = document.getElementById("email");
 const password = document.getElementById("password");
 const nama = document.getElementById("nama");
@@ -83,108 +84,89 @@ const kategori = document.getElementById("kategori");
 
 /* LOGIN */
 loginBtn.onclick = () => {
-  signInWithEmailAndPassword(auth,email.value,password.value).catch(err=>alert("Login gagal: "+err.message));
+  signInWithEmailAndPassword(auth,email.value,password.value)
+  .catch(err=>alert("Login gagal: "+err.message));
 };
 
-/* RESET PASSWORD */
+/* RESET */
 resetBtn.onclick = () => {
   if(!email.value) return alert("Masukkan email");
-  sendPasswordResetEmail(auth,email.value).then(()=>alert("📧 Email reset terkirim")).catch(err=>alert(err.message));
+  sendPasswordResetEmail(auth,email.value).then(()=>alert("📧 Email reset terkirim"));
 };
 
 /* BACK TO VISITOR */
-backToVisitor.onclick = ()=>location.href="index.html";
+backToVisitor.onclick = () => location.href="index.html";
 
 /* LOGOUT */
-logoutBtn.onclick = async ()=>{await signOut(auth); location.href="index.html";};
+logoutBtn.onclick = async()=>{ await signOut(auth); location.href="index.html"; };
 
 /* AUTH STATE */
 onAuthStateChanged(auth,user=>{
-  if(user){ loginBox.classList.add("hidden"); dashboard.classList.remove("hidden"); loadProduk(); }
+  if(user){ loginBox.classList.add("hidden"); dashboard.classList.remove("hidden"); loadProdukAdmin(); }
   else{ loginBox.classList.remove("hidden"); dashboard.classList.add("hidden"); }
 });
 
-/* LOAD PRODUK */
-async function loadProduk(){
-  list.innerHTML="";
-  const snap = await getDocs(collection(db,"produk"));
-  snap.forEach(d=>{
-    const p=d.data();
-    const div=document.createElement("div");
-    div.className="bg-white p-4 rounded-xl shadow mb-3";
-    div.innerHTML=`
-      <div class="flex justify-between items-center">
-        <div>
-          <b>${p.nama}</b> (${p.kategori})<br>
-          ${p.deskripsi||""}<br>
-          <a href="${p.link}" target="_blank" class="text-pink-500 underline">Link Produk</a>
-        </div>
-        <div class="flex flex-col gap-1">
-          <button class="editBtn bg-yellow-400 text-white px-2 py-1 rounded text-sm" data-id="${d.id}">Edit</button>
-          <button class="hapusBtn bg-red-500 text-white px-2 py-1 rounded text-sm" data-id="${d.id}">Hapus</button>
-        </div>
-      </div>
-      ${p.gambar ? `<img src="${p.gambar}" class="mt-2 rounded-xl w-48 object-cover"/>` : ""}
-    `;
-    list.appendChild(div);
-  });
-
-  /* HAPUS */
-  document.querySelectorAll(".hapusBtn").forEach(btn=>{
-    btn.onclick=async ()=>{
-      if(confirm("Hapus produk?")){
-        await deleteDoc(doc(db,"produk",btn.dataset.id));
-        loadProduk();
-      }
-    }
-  });
-
-  /* EDIT */
-  document.querySelectorAll(".editBtn").forEach(btn=>{
-    btn.onclick=async ()=>{
-      const d=await getDocs(collection(db,"produk"));
-      const docData=d.docs.find(x=>x.id===btn.dataset.id).data();
-      nama.value=docData.nama;
-      deskripsi.value=docData.deskripsi;
-      link.value=docData.link;
-      kategori.value=docData.kategori;
-      gambar.value=docData.gambar || "";
-      simpanBtn.dataset.editId=btn.dataset.id;
-    }
-  });
-}
-
 /* SIMPAN PRODUK */
-simpanBtn.onclick=async ()=>{
+simpanBtn.onclick = async()=>{
   if(!nama.value||!link.value||!kategori.value){
-    alert("❌ Nama, Link & Kategori wajib diisi!");
+    alert("❌ Nama, Link & Kategori wajib diisi");
     return;
   }
-
-  const data={
-    nama:nama.value,
-    deskripsi:deskripsi.value,
-    link:link.value,
-    kategori:kategori.value,
-    gambar:gambar.value || "",
-    klik:0,
-    createdAt:serverTimestamp()
-  };
-
   try{
-    if(simpanBtn.dataset.editId){
-      await updateDoc(doc(db,"produk",simpanBtn.dataset.editId),data);
-      delete simpanBtn.dataset.editId;
-      alert("✅ Produk berhasil diupdate");
-    }else{
-      await addDoc(collection(db,"produk"),data);
-      alert("✅ Produk berhasil disimpan");
-    }
+    await addDoc(collection(db,"produk"),{
+      nama:nama.value,
+      deskripsi:deskripsi.value,
+      link:link.value,
+      gambar:gambar.value,
+      kategori:kategori.value,
+      klik:0,
+      createdAt:serverTimestamp()
+    });
     nama.value=deskripsi.value=link.value=kategori.value=gambar.value="";
-    loadProduk();
+    loadProdukAdmin();
   }catch(e){ alert("❌ Gagal simpan: "+e.message);}
 };
-</script>
 
+/* LOAD PRODUK ADMIN */
+async function loadProdukAdmin(){
+  produkList.innerHTML="";
+  const snap = await getDocs(collection(db,"produk"));
+  const kategoriMap = {};
+  snap.forEach(d=>{
+    const p=d.data();
+    if(!kategoriMap[p.kategori]) kategoriMap[p.kategori]=[];
+    kategoriMap[p.kategori].push({id:d.id,...p});
+  });
+
+  Object.keys(kategoriMap).forEach(cat=>{
+    const section=document.createElement("details");
+    section.className="mb-6";
+    section.innerHTML=`<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${cat}</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>`;
+    const grid=section.querySelector("div");
+    kategoriMap[cat].forEach(p=>{
+      const card=document.createElement("div");
+      card.className="bg-white rounded-2xl shadow p-4";
+      card.innerHTML=`
+        <div class="overflow-hidden rounded-xl mb-2 bg-pink-100">
+          <img src="${p.gambar||'https://via.placeholder.com/400x400?text=Luqqy+Store'}" class="w-full h-40 object-cover"/>
+        </div>
+        <b>${p.nama}</b>
+        <p class="text-sm text-gray-500 mb-2">${p.deskripsi||''}</p>
+        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-1 rounded-full mb-2">Beli Sekarang</a>
+        <button class="hapusBtn bg-red-500 text-white px-2 py-1 rounded-full">Hapus</button>
+      `;
+      // Hapus
+      card.querySelector(".hapusBtn").onclick=async()=>{
+        if(confirm("Hapus produk?")){
+          await deleteDoc(doc(db,"produk",p.id));
+          loadProdukAdmin();
+        }
+      };
+      grid.appendChild(card);
+    });
+    produkList.appendChild(section);
+  });
+}
+</script>
 </body>
 </html>
