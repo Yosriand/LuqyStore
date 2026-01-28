@@ -26,6 +26,7 @@
 
   <!-- DASHBOARD -->
   <div id="dashboard" class="hidden">
+
     <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition">Logout</button>
 
     <!-- TAMBAH / EDIT PRODUK -->
@@ -61,7 +62,8 @@ const firebaseConfig = {
   projectId: "luqqy-store",
   storageBucket: "luqqy-store.firebasestorage.app",
   messagingSenderId: "157194853674",
-  appId: "1:157194853674:web:936fac43307d852fedd253"
+  appId: "1:157194853674:web:936fac43307d852fedd253",
+  measurementId: "G-934QRS9WKR"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -89,7 +91,7 @@ loginBtn.onclick = () => {
     .catch(err=>alert("Login gagal: "+err.message));
 };
 
-/* RESET */
+/* RESET PASSWORD */
 resetBtn.onclick = () => {
   if(!email.value) return alert("Masukkan email");
   sendPasswordResetEmail(auth,email.value).then(()=>alert("📧 Email reset terkirim"));
@@ -114,26 +116,32 @@ simpanBtn.onclick = async()=>{
     return;
   }
 
-  const data = {
-    nama: nama.value,
-    deskripsi: deskripsi.value,
-    link: link.value,
-    gambar: gambar.value,
-    kategori: kategori.value,
-    klik: editId ? undefined : 0,
-    createdAt: editId ? undefined : serverTimestamp()
-  };
-
   try{
     if(editId){
-      await updateDoc(doc(db,"produk",editId), data);
-      editId = null;
+      await updateDoc(doc(db,"produk",editId), {
+        nama: nama.value,
+        deskripsi: deskripsi.value,
+        link: link.value,
+        gambar: gambar.value,
+        kategori: kategori.value
+      });
       alert("✅ Produk berhasil diupdate");
+      editId = null;
     }else{
-      await addDoc(collection(db,"produk"), data);
+      await addDoc(collection(db,"produk"), {
+        nama: nama.value,
+        deskripsi: deskripsi.value,
+        link: link.value,
+        gambar: gambar.value,
+        kategori: kategori.value,
+        klik: 0,
+        createdAt: serverTimestamp()
+      });
       alert("✅ Produk berhasil disimpan");
     }
-    nama.value=deskripsi.value=link.value=kategori.value=gambar.value="";
+
+    // Reset form
+    nama.value = deskripsi.value = link.value = gambar.value = kategori.value = "";
     loadProdukAdmin();
   }catch(e){ alert("❌ Gagal simpan: "+e.message);}
 };
@@ -158,7 +166,8 @@ async function loadProdukAdmin(){
     kategoriMap[cat].forEach(p=>{
       const card=document.createElement("div");
       card.className="bg-white rounded-2xl shadow p-4";
-      card.innerHTML=`<div class="overflow-hidden rounded-xl mb-2 bg-pink-100">
+      card.innerHTML=`
+        <div class="overflow-hidden rounded-xl mb-2 bg-pink-100">
           <img src="${p.gambar||'https://via.placeholder.com/400x400?text=Luqy+Store'}" class="w-full h-40 object-cover"/>
         </div>
         <b>${p.nama}</b>
@@ -168,8 +177,10 @@ async function loadProdukAdmin(){
           <button class="viewBtn bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 transition">View</button>
           <button class="editBtn bg-yellow-400 text-white px-3 py-1 rounded-full hover:bg-yellow-500 transition">Edit</button>
           <button class="hapusBtn bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 transition">Hapus</button>
-        </div>`;
+        </div>
+      `;
 
+      // HAPUS
       card.querySelector(".hapusBtn").onclick=async()=>{
         if(confirm("Hapus produk?")){
           await deleteDoc(doc(db,"produk",p.id));
@@ -177,21 +188,24 @@ async function loadProdukAdmin(){
         }
       };
 
+      // EDIT
       card.querySelector(".editBtn").onclick=()=>{
-        editId=p.id;
-        nama.value=p.nama;
-        deskripsi.value=p.deskripsi;
-        link.value=p.link;
-        gambar.value=p.gambar;
-        kategori.value=p.kategori;
-        window.scrollTo({top:0,behavior:"smooth"});
+        editId = p.id;
+        nama.value = p.nama;
+        deskripsi.value = p.deskripsi;
+        link.value = p.link;
+        gambar.value = p.gambar;
+        kategori.value = p.kategori;
+        window.scrollTo({top:0, behavior:"smooth"});
       };
 
-      card.querySelector(".viewBtn").onclick=()=>{ window.open(p.link,"_blank"); };
+      // VIEW
+      card.querySelector(".viewBtn").onclick=()=>{
+        window.open(p.link,"_blank");
+      };
 
       grid.appendChild(card);
     });
-
     produkList.appendChild(section);
   });
 }
