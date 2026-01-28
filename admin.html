@@ -32,7 +32,7 @@
     <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
 
     <div class="bg-white p-6 rounded-xl shadow mb-6">
-      <h2 class="font-bold mb-4">Tambah Produk</h2>
+      <h2 class="font-bold mb-4">Tambah / Edit Produk</h2>
       <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2"/>
       <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
       <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2"/>
@@ -52,7 +52,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 /* FIREBASE CONFIG */
@@ -81,6 +81,9 @@ const deskripsi = document.getElementById("deskripsi");
 const link = document.getElementById("link");
 const kategori = document.getElementById("kategori");
 const gambar = document.getElementById("gambar");
+const simpanBtn = document.getElementById("simpanBtn");
+
+let editId = null;
 
 /* LOGIN */
 loginBtn.onclick = () => signInWithEmailAndPassword(auth,email.value,password.value).catch(err=>alert("Login gagal: "+err.message));
@@ -106,18 +109,37 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
-/* SIMPAN PRODUK */
+/* SIMPAN / UPDATE PRODUK */
 simpanBtn.onclick = async ()=>{
   if(!nama.value || !link.value || !kategori.value){ alert("❌ Nama, Link & Kategori wajib diisi"); return; }
-  await addDoc(collection(db,"produk"),{
-    nama:nama.value,
-    deskripsi:deskripsi.value,
-    link:link.value,
-    kategori:kategori.value,
-    gambar:gambar.value || "",
-    klik:0,
-    createdAt:serverTimestamp()
-  });
+
+  if(editId){
+    // Update
+    await updateDoc(doc(db,"produk",editId),{
+      nama:nama.value,
+      deskripsi:deskripsi.value,
+      link:link.value,
+      kategori:kategori.value,
+      gambar:gambar.value || "",
+      updatedAt:serverTimestamp()
+    });
+    editId=null;
+    simpanBtn.textContent="Simpan Produk";
+    alert("✅ Produk berhasil diupdate");
+  } else {
+    // Tambah baru
+    await addDoc(collection(db,"produk"),{
+      nama:nama.value,
+      deskripsi:deskripsi.value,
+      link:link.value,
+      kategori:kategori.value,
+      gambar:gambar.value || "",
+      klik:0,
+      createdAt:serverTimestamp()
+    });
+    alert("✅ Produk berhasil disimpan");
+  }
+
   nama.value=deskripsi.value=link.value=kategori.value=gambar.value="";
   loadProdukPreview();
 };
@@ -150,8 +172,11 @@ async function loadProdukPreview(){
           card.innerHTML=`<div class="mb-2 rounded-xl overflow-hidden"><img src="${imgSrc}" class="w-full h-36 object-cover" onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'"/></div>
             <h3 class="font-bold text-pink-700">${p.nama}</h3>
             <p class="text-sm text-gray-500 mb-2">${p.deskripsi||""}</p>
-            <a href="${p.link}" target="_blank" class="block bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full text-center font-semibold">Lihat Produk</a>
-            <button class="mt-1 bg-red-100 text-red-500 px-2 py-1 rounded" onclick="hapusProduk('${p.id}')">Hapus</button>`;
+            <a href="${p.link}" target="_blank" class="block bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full text-center font-semibold mb-1">Lihat Produk</a>
+            <div class="flex gap-2">
+              <button class="bg-yellow-100 text-yellow-600 px-2 py-1 rounded" onclick="editProduk('${p.id}')">Edit</button>
+              <button class="bg-red-100 text-red-500 px-2 py-1 rounded" onclick="hapusProduk('${p.id}')">Hapus</button>
+            </div>`;
           grid.appendChild(card);
         });
       }
@@ -165,6 +190,22 @@ window.hapusProduk = async id=>{
   if(confirm("Hapus produk ini?")){
     await deleteDoc(doc(db,"produk",id));
     loadProdukPreview();
+  }
+};
+
+/* EDIT PRODUK */
+window.editProduk = async id=>{
+  const snap = await getDocs(collection(db,"produk"));
+  const produk = snap.docs.map(d=>({id:d.id,...d.data()})).find(p=>p.id===id);
+  if(produk){
+    nama.value = produk.nama;
+    deskripsi.value = produk.deskripsi;
+    link.value = produk.link;
+    kategori.value = produk.kategori;
+    gambar.value = produk.gambar || "";
+    editId = id;
+    simpanBtn.textContent="Update Produk";
+    window.scrollTo({ top:0, behavior:'smooth' });
   }
 };
 </script>
