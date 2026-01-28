@@ -19,15 +19,15 @@
     <h2 class="text-xl font-bold mb-4 text-pink-600">Login Admin</h2>
     <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2"/>
     <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-4"/>
-    <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Login</button>
-    <button id="resetBtn" class="text-sm text-pink-500 underline w-full mb-2">Lupa password?</button>
-    <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50">← Kembali ke Luqqy Store</button>
+    <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2 hover:bg-pink-600 transition">Login</button>
+    <button id="resetBtn" class="text-sm text-pink-500 underline w-full mb-2 hover:text-pink-600">Lupa password?</button>
+    <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50 transition">← Kembali ke Luqqy Store</button>
   </div>
 
   <!-- DASHBOARD -->
   <div id="dashboard" class="hidden">
 
-    <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
+    <button id="logoutBtn" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full hover:bg-rose-600 transition">Logout</button>
 
     <!-- TAMBAH / EDIT PRODUK -->
     <div class="bg-white p-6 rounded-xl shadow mb-6">
@@ -42,7 +42,7 @@
         <option value="fashion">👜 Fashion</option>
         <option value="home">🏠 Home & Living</option>
       </select>
-      <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full">Simpan Produk</button>
+      <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full hover:bg-pink-600 transition">Simpan Produk</button>
     </div>
 
     <!-- DAFTAR PRODUK -->
@@ -82,12 +82,12 @@ const link = document.getElementById("link");
 const gambar = document.getElementById("gambar");
 const kategori = document.getElementById("kategori");
 
-let editId = null; // Menyimpan ID produk yang sedang diedit
+let editId = null;
 
 /* LOGIN */
 loginBtn.onclick = () => {
   signInWithEmailAndPassword(auth,email.value,password.value)
-  .catch(err=>alert("Login gagal: "+err.message));
+    .catch(err=>alert("Login gagal: "+err.message));
 };
 
 /* RESET */
@@ -126,13 +126,11 @@ simpanBtn.onclick = async()=>{
   };
 
   try{
-    if(editId){ 
-      // EDIT PRODUK
+    if(editId){
       await updateDoc(doc(db,"produk",editId), data);
       editId = null;
       alert("✅ Produk berhasil diupdate");
     }else{
-      // TAMBAH PRODUK BARU
       await addDoc(collection(db,"produk"), data);
       alert("✅ Produk berhasil disimpan");
     }
@@ -167,12 +165,13 @@ async function loadProdukAdmin(){
         </div>
         <b>${p.nama}</b>
         <p class="text-sm text-gray-500 mb-2">${p.deskripsi||''}</p>
-        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-1 rounded-full mb-2">Beli Sekarang</a>
-        <div class="flex gap-2">
-          <button class="editBtn bg-yellow-400 text-white px-2 py-1 rounded-full">Edit</button>
-          <button class="hapusBtn bg-red-500 text-white px-2 py-1 rounded-full">Hapus</button>
+        <a href="${p.link}" target="_blank" class="text-blue-600 underline text-sm mb-2 block">Link Beli</a>
+        <div class="flex justify-between mt-2">
+          <button class="editBtn bg-yellow-400 text-white px-3 py-1 rounded-full hover:bg-yellow-500 transition">Edit</button>
+          <button class="hapusBtn bg-red-500 text-white px-3 py-1 rounded-full hover:bg-red-600 transition">Hapus</button>
         </div>
       `;
+
       // HAPUS
       card.querySelector(".hapusBtn").onclick=async()=>{
         if(confirm("Hapus produk?")){
@@ -180,6 +179,7 @@ async function loadProdukAdmin(){
           loadProdukAdmin();
         }
       };
+
       // EDIT
       card.querySelector(".editBtn").onclick=()=>{
         editId = p.id;
