@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Luqqy Store</title>
-<meta name="description" content="Luqqy Store - Rekomendasi produk affiliate terbaik">
+<title>luqy Store</title>
+<meta name="description" content="luqy Store - Rekomendasi produk affiliate terbaik">
 
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -12,7 +12,7 @@
 
 <!-- HEADER -->
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
-  <h1 class="text-3xl font-extrabold">Luqqy Store</h1>
+  <h1 class="text-3xl font-extrabold">luqy Store</h1>
   <a href="admin.html" class="bg-white text-pink-500 px-4 py-2 rounded-full text-sm font-semibold hover:bg-pink-100 transition">
     🔐 Login Admin
   </a>
@@ -32,7 +32,7 @@
 </div>
 
 <footer class="text-center text-sm text-pink-400 py-6">
-  © Luqqy Store
+  © luqy Store
 </footer>
 
 <script type="module">
@@ -42,9 +42,9 @@ import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc, incr
 /* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
-  authDomain: "luqqy-store.firebaseapp.com",
-  projectId: "luqqy-store",
-  storageBucket: "luqqy-store.appspot.com",
+  authDomain: "luqy-store.firebaseapp.com",
+  projectId: "luqy-store",
+  storageBucket: "luqy-store.appspot.com",
   messagingSenderId: "157194853674",
   appId: "1:157194853674:web:936fac43307d852fedd253"
 };
@@ -103,7 +103,7 @@ function renderProduk() {
 
       card.innerHTML = `
         <div class="overflow-hidden rounded-xl mb-3 bg-pink-100">
-          <img src="${p.gambar || 'https://via.placeholder.com/400x400?text=Luqqy+Store'}"
+          <img src="${p.gambar || 'https://via.placeholder.com/400x400?text=luqy+Store'}"
             loading="lazy"
             referrerpolicy="no-referrer"
             class="w-full h-44 object-cover"/>
