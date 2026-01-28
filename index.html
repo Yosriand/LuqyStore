@@ -4,9 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Luqqy Store</title>
-  <meta name="description" content="Luqqy Store - Rekomendasi produk affiliate terbaik: skincare, fashion, dan home living">
+  <meta name="description" content="Luqqy Store - Rekomendasi produk affiliate terbaik">
 
-  <!-- Tailwind CDN (aman untuk tahap ini) -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -24,11 +23,9 @@
 <!-- ================= SEARCH & SORT ================= -->
 <div class="max-w-6xl mx-auto p-6">
   <div class="flex flex-col md:flex-row gap-4 mb-6">
-    <input
-      id="search"
+    <input id="search"
       placeholder="🔍 Cari produk favoritmu..."
-      class="flex-1 p-3 rounded-full border focus:outline-pink-300"
-    />
+      class="flex-1 p-3 rounded-full border focus:outline-pink-300"/>
 
     <select id="sort" class="p-3 rounded-full border">
       <option value="terbaru">🆕 Terbaru</option>
@@ -36,7 +33,6 @@
     </select>
   </div>
 
-  <!-- ================= PRODUK ================= -->
   <div id="produk"></div>
 </div>
 
@@ -48,14 +44,9 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  updateDoc,
-  increment,
-  query,
-  orderBy
+  getFirestore, collection, getDocs,
+  doc, updateDoc, increment,
+  query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* ================= FIREBASE CONFIG ================= */
@@ -65,8 +56,7 @@ const firebaseConfig = {
   projectId: "luqqy-store",
   storageBucket: "luqqy-store.firebasestorage.app",
   messagingSenderId: "157194853674",
-  appId: "1:157194853674:web:936fac43307d852fedd253",
-  measurementId: "G-934QRS9WKR"
+  appId: "1:157194853674:web:936fac43307d852fedd253"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -79,11 +69,7 @@ const sortEl = document.getElementById("sort");
 
 let allProduk = [];
 
-/* ================= OPTIMASI GAMBAR AFFILIATE =================
-   - Tidak upload gambar
-   - Tidak pakai Firebase Storage
-   - Gambar otomatis dari link Shopee / Tokopedia / dll
-*/
+/* ================= GAMBAR AFFILIATE ================= */
 function affiliateImage(url) {
   return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=image.url&meta=false&screenshot=false`;
 }
@@ -100,7 +86,7 @@ async function loadProduk() {
   renderProduk();
 }
 
-/* ================= RENDER PRODUK ================= */
+/* ================= RENDER ================= */
 function renderProduk() {
   const keyword = searchEl.value.toLowerCase();
 
@@ -111,7 +97,7 @@ function renderProduk() {
   };
 
   allProduk
-    .filter(p => p.nama.toLowerCase().includes(keyword))
+    .filter(p => p.nama?.toLowerCase().includes(keyword))
     .forEach(p => kategoriMap[p.kategori]?.items.push(p));
 
   produkEl.innerHTML = "";
@@ -119,14 +105,11 @@ function renderProduk() {
   Object.values(kategoriMap).forEach(cat => {
     if (!cat.items.length) return;
 
-    const section = document.createElement("details");
-    section.open = true;
-    section.className = "mb-8";
+    const section = document.createElement("section");
+    section.className = "mb-10";
 
     section.innerHTML = `
-      <summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">
-        ${cat.title}
-      </summary>
+      <h2 class="font-bold text-xl text-pink-600 mb-4">${cat.title}</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>
     `;
 
@@ -134,28 +117,24 @@ function renderProduk() {
 
     cat.items.forEach(p => {
       const card = document.createElement("div");
-      card.className =
-        "bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
+      card.className = "bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
 
       card.innerHTML = `
-        <div class="relative overflow-hidden rounded-xl mb-3 bg-pink-100">
-          <img
-            src="${affiliateImage(p.link)}"
+        <div class="rounded-xl overflow-hidden mb-3 bg-pink-100">
+          <img src="${affiliateImage(p.link)}"
             loading="lazy"
             referrerpolicy="no-referrer"
-            onerror="this.src='https://via.placeholder.com/400x400?text=Luqqy+Store'"
-            class="w-full h-44 object-cover"
-          />
+            onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'"
+            class="w-full h-44 object-cover">
         </div>
 
         <h3 class="font-bold text-pink-700">${p.nama}</h3>
         <p class="text-sm text-gray-500 mb-4">${p.deskripsi || ""}</p>
 
-        <a href="${p.link}"
-           target="_blank"
-           class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition"
-           onclick="klikProduk('${p.id}')">
-           🛍️ Beli Sekarang
+        <a href="${p.link}" target="_blank"
+          data-id="${p.id}"
+          class="beli block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition">
+          🛍️ Beli Sekarang
         </a>
       `;
 
@@ -164,18 +143,20 @@ function renderProduk() {
 
     produkEl.appendChild(section);
   });
+
+  document.querySelectorAll(".beli").forEach(btn => {
+    btn.addEventListener("click", () => hitungKlik(btn.dataset.id));
+  });
 }
 
-/* ================= HITUNG KLIK ================= */
-window.klikProduk = async id => {
+/* ================= KLIK ================= */
+async function hitungKlik(id) {
   try {
-    await updateDoc(doc(db, "produk", id), {
-      klik: increment(1)
-    });
+    await updateDoc(doc(db, "produk", id), { klik: increment(1) });
   } catch (e) {
-    console.warn("Gagal update klik", e);
+    console.warn("Klik gagal dicatat");
   }
-};
+}
 
 /* ================= EVENT ================= */
 searchEl.addEventListener("input", renderProduk);
