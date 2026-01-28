@@ -1,4 +1,75 @@
 <!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Luqqy Store</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-pink-50 min-h-screen">
+
+
+<header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 text-center shadow">
+<h1 class="text-3xl font-extrabold">Admin Luqqy Store</h1>
+</header>
+
+
+<div class="max-w-4xl mx-auto p-6">
+
+
+<!-- LOGIN -->
+<div id="loginBox" class="bg-white p-6 rounded-xl shadow">
+<h2 class="text-xl font-bold mb-4 text-pink-600">Login Admin</h2>
+<input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2" />
+<input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-4" />
+<button onclick="login()" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Login</button>
+<button onclick="resetPassword()" class="text-sm text-pink-500 underline w-full">Lupa password?</button>
+</div>
+
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="hidden">
+
+
+<button onclick="logout()" class="mb-4 bg-rose-500 text-white px-4 py-2 rounded-full">Logout</button>
+
+
+<div class="bg-white p-6 rounded-xl shadow mb-6">
+<h2 class="font-bold mb-4">Tambah / Edit Produk</h2>
+<input id="nama" placeholder="Nama Produk" class="w-full border p-2 rounded mb-2">
+<textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
+<input id="gambar" placeholder="URL Gambar" class="w-full border p-2 rounded mb-2">
+<input id="link" placeholder="Link Affiliate" class="w-full border p-2 rounded mb-2">
+
+
+<select id="kategori" class="w-full border p-2 rounded mb-4">
+<option value="">Pilih Kategori</option>
+<option value="skincare">💄 Skincare</option>
+<option value="fashion">👜 Fashion</option>
+<option value="home">🏠 Home</option>
+</select>
+
+
+<button onclick="simpan()" class="w-full bg-pink-500 text-white p-2 rounded-full">Simpan</button>
+</div>
+
+
+<div id="list"></div>
+</div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+
+const firebaseConfig = {
+apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
+authDomain: "luqqy-store.firebaseapp.com",
+projectId: "luqqy-store",
+storageBucket: "luqqy-store.firebasestorage.app",
 messagingSenderId: "157194853674",
 appId: "1:157194853674:web:936fac43307d852fedd253",
 measurementId: "G-934QRS9WKR"
@@ -22,74 +93,4 @@ window.resetPassword = () => {
 if (!email.value) return alert('Masukkan email');
 sendPasswordResetEmail(auth, email.value)
 .then(() => alert('Link reset dikirim ke email'))
-.catch(e => alert(e.message));
-};
-
-
-window.logout = () => signOut(auth);
-
-
-onAuthStateChanged(auth, user => {
-if (user) {
-loginBox.classList.add('hidden');
-dashboard.classList.remove('hidden');
-load();
-} else {
-loginBox.classList.remove('hidden');
-dashboard.classList.add('hidden');
-}
-});
-
-
-async function load() {
-const snap = await getDocs(collection(db, 'produk'));
-produk = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-render();
-}
-
-
-window.simpan = async () => {
-const data = {
-nama: nama.value,
-deskripsi: deskripsi.value,
-gambar: gambar.value,
-link: link.value,
-kategori: kategori.value,
-klik: 0,
-createdAt: serverTimestamp()
-};
-
-
-if (editId) await updateDoc(doc(db, 'produk', editId), data);
-else await addDoc(collection(db, 'produk'), data);
-
-
-editId = null;
-nama.value = deskripsi.value = gambar.value = link.value = kategori.value = '';
-load();
-};
-
-
-function render() {
-list.innerHTML = '';
-produk.forEach(p => {
-list.innerHTML += `
-<div class='bg-white p-4 rounded-xl shadow mb-4'>
-<b>${p.nama}</b> | Klik: ${p.klik || 0}
-<div class='mt-2 flex gap-2'>
-<button onclick="hapus('${p.id}')" class='bg-rose-500 text-white px-3 rounded'>Hapus</button>
-</div>
-</div>`;
-});
-}
-
-
-window.hapus = async (id) => {
-if (confirm('Hapus produk?')) {
-await deleteDoc(doc(db, 'produk', id));
-load();
-}
-};
-</script>
-</body>
 </html>
