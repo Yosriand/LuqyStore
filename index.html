@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Luqqy Store</title>
+<meta name="description" content="Luqqy Store - Produk affiliate terbaik: skincare, fashion, home & living">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-pink-50 min-h-screen">
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 shadow flex justify-between items-center">
@@ -16,18 +18,27 @@
 </header>
 
 <div class="max-w-6xl mx-auto p-6">
-  <input id="search" placeholder="🔍 Cari produk..." class="flex-1 p-3 rounded-full border mb-4"/>
-  <select id="sort" class="p-3 rounded-full border mb-6">
-    <option value="terbaru">🆕 Terbaru</option>
-    <option value="terlaris">🔥 Terlaris</option>
-  </select>
+
+  <!-- Search & Sort -->
+  <div class="flex flex-col md:flex-row gap-4 mb-6">
+    <input id="search" placeholder="🔍 Cari produk..." class="flex-1 p-3 rounded-full border focus:outline-pink-300"/>
+    <select id="sort" class="p-3 rounded-full border">
+      <option value="terbaru">🆕 Terbaru</option>
+      <option value="terlaris">🔥 Terlaris</option>
+    </select>
+  </div>
+
+  <!-- Produk -->
   <div id="produk"></div>
 </div>
+
+<footer class="text-center text-sm text-pink-400 py-6">© Luqqy Store</footer>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc, increment, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
   authDomain: "luqqy-store.firebaseapp.com",
@@ -46,49 +57,79 @@ const sortEl = document.getElementById("sort");
 
 let allProduk = [];
 
-function affiliateImage(url){
-  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&embed=image.url&meta=false&screenshot=false`;
+/* Helper: Ambil gambar affiliate */
+function getImage(p) {
+  if(p.gambar) return p.gambar;
+  if(p.link) return `https://api.microlink.io/?url=${encodeURIComponent(p.link)}&embed=image.url&meta=false&screenshot=false`;
+  return "https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store";
 }
 
+/* Load produk */
 async function loadProduk(){
-  const q = sortEl.value==="terlaris"?query(collection(db,"produk"),orderBy("klik","desc")):query(collection(db,"produk"),orderBy("createdAt","desc"));
-  const snap = await getDocs(q);
+  const orderField = sortEl.value==="terlaris" ? "klik" : "createdAt";
+  const snap = await getDocs(query(collection(db,"produk"), orderBy(orderField,"desc")));
   allProduk = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderProduk();
 }
 
+/* Render produk per kategori */
 function renderProduk(){
   const keyword = searchEl.value.toLowerCase();
-  const kategoriMap = {skincare:[],fashion:[],home:[]};
-  allProduk.filter(p=>p.nama?.toLowerCase().includes(keyword)).forEach(p=>kategoriMap[p.kategori]?.push(p));
+  const kategoriMap = {skincare:[], fashion:[], home:[]};
+  allProduk.filter(p=>p.nama.toLowerCase().includes(keyword)).forEach(p=>{
+    if(kategoriMap[p.kategori]) kategoriMap[p.kategori].push(p);
+  });
+
   produkEl.innerHTML="";
-  Object.entries(kategoriMap).forEach(([key,items])=>{
+  Object.entries(kategoriMap).forEach(([cat, items])=>{
     if(items.length===0) return;
-    const section=document.createElement("details");
-    section.open=true;
-    section.className="mb-8";
-    section.innerHTML=`<summary class="cursor-pointer font-bold text-xl text-pink-600 mb-4">${key.toUpperCase()} (${items.length})</summary><div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>`;
-    const grid = section.querySelector("div");
-    items.forEach(p=>{
-      const imgSrc = p.gambar||affiliateImage(p.link);
-      const card=document.createElement("div");
-      card.className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
-      card.innerHTML=`<div class="mb-3 rounded-xl overflow-hidden"><img src="${imgSrc}" class="w-full h-44 object-cover" onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'"/></div>
-        <h3 class="font-bold text-pink-700">${p.nama}</h3>
-        <p class="text-sm text-gray-500 mb-4">${p.deskripsi||""}</p>
-        <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold" onclick="klikProduk('${p.id}')">🛍️ Beli Sekarang</a>`;
-      grid.appendChild(card);
+
+    const details = document.createElement("details");
+    details.className="mb-8";
+    details.innerHTML = `<summary class="cursor-pointer font-bold text-xl text-pink-600 p-2">${cat.toUpperCase()} (${items.length})</summary>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 p-2"></div>`;
+    const grid = details.querySelector("div");
+
+    details.addEventListener("toggle", ()=>{
+      if(details.open && grid.children.length===0){
+        items.forEach(p=>{
+          const card = document.createElement("div");
+          card.className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
+          card.innerHTML = `
+            <div class="rounded-xl overflow-hidden mb-3">
+              <img src="${getImage(p)}" loading="lazy" referrerpolicy="no-referrer"
+              onerror="this.src='https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store'" 
+              class="w-full h-44 object-cover"/>
+            </div>
+            <h3 class="font-bold text-pink-700">${p.nama}</h3>
+            <p class="text-sm text-gray-500 mb-4">${p.deskripsi||""}</p>
+            <a href="${p.link}" target="_blank" class="block text-center bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full font-semibold transition" onclick="klikProduk('${p.id}')">
+              🛍️ Beli Sekarang
+            </a>
+          `;
+          grid.appendChild(card);
+        });
+      }
     });
-    produkEl.appendChild(section);
+
+    produkEl.appendChild(details);
   });
 }
 
-window.klikProduk = async id => { try{ await updateDoc(doc(db,"produk",id),{klik:increment(1)}); }catch(e){console.warn(e);} };
+/* Hitung klik */
+window.klikProduk = async id=>{
+  try{
+    await updateDoc(doc(db,"produk",id), { klik: increment(1) });
+  }catch(e){ console.warn("Klik gagal dicatat", e); }
+}
 
-searchEl.addEventListener("input",renderProduk);
-sortEl.addEventListener("change",loadProduk);
+/* Event */
+searchEl.addEventListener("input", renderProduk);
+sortEl.addEventListener("change", loadProduk);
 
+/* Init */
 loadProduk();
 </script>
+
 </body>
 </html>
