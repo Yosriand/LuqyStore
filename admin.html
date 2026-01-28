@@ -6,6 +6,7 @@
 <title>Admin Luqqy Store</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-pink-50 min-h-screen">
 
 <header class="bg-gradient-to-r from-pink-400 to-rose-500 text-white p-6 text-center shadow">
@@ -18,8 +19,9 @@
   <div id="loginBox" class="bg-white p-6 rounded-xl shadow">
     <h2 class="text-xl font-bold mb-4 text-pink-600">Login Admin</h2>
 
-    <input id="email" type="email" placeholder="Email *" class="w-full border p-2 rounded mb-2"/>
-    <input id="password" type="password" placeholder="Password *" class="w-full border p-2 rounded mb-4"/>
+    <input id="email" type="email" placeholder="Email" class="w-full border p-2 rounded mb-2"/>
+    <input id="password" type="password" placeholder="Password" class="w-full border p-2 rounded mb-4"/>
+
     <button id="loginBtn" class="w-full bg-pink-500 text-white p-2 rounded-full mb-2">Login</button>
     <button id="resetBtn" class="text-sm text-pink-500 underline w-full mb-2">Lupa password?</button>
     <button id="backToVisitor" class="w-full border border-pink-400 text-pink-500 p-2 rounded-full hover:bg-pink-50">
@@ -36,11 +38,9 @@
     <div class="bg-white p-6 rounded-xl shadow mb-6">
       <h2 class="font-bold mb-4">Tambah Produk</h2>
 
-      <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2">
-      <textarea id="deskripsi" placeholder="Deskripsi *" class="w-full border p-2 rounded mb-2"></textarea>
-      <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2">
-      <input id="gambar" placeholder="URL Gambar (opsional)" class="w-full border p-2 rounded mb-2">
-
+      <input id="nama" placeholder="Nama Produk *" class="w-full border p-2 rounded mb-2"/>
+      <textarea id="deskripsi" placeholder="Deskripsi" class="w-full border p-2 rounded mb-2"></textarea>
+      <input id="link" placeholder="Link Affiliate *" class="w-full border p-2 rounded mb-2"/>
       <select id="kategori" class="w-full border p-2 rounded mb-4">
         <option value="">Pilih Kategori *</option>
         <option value="skincare">💄 Skincare</option>
@@ -48,18 +48,19 @@
         <option value="home">🏠 Home & Living</option>
       </select>
 
+      <input id="gambar" placeholder="URL Gambar (opsional)" class="w-full border p-2 rounded mb-4"/>
+
       <button id="simpanBtn" class="w-full bg-pink-500 text-white p-2 rounded-full">Simpan Produk</button>
     </div>
 
-    <!-- DAFTAR PRODUK -->
-    <h2 class="font-bold mb-2 text-pink-600">Produk Terposting</h2>
-    <div id="list" class="mb-6"></div>
+    <!-- PREVIEW PRODUK PER KATEGORI -->
+    <div id="produkList"></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 /* FIREBASE CONFIG */
@@ -76,10 +77,10 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/* ELEMENTS */
+/* ELEMENT */
 const loginBox = document.getElementById("loginBox");
 const dashboard = document.getElementById("dashboard");
-const list = document.getElementById("list");
+const produkList = document.getElementById("produkList");
 
 const email = document.getElementById("email");
 const password = document.getElementById("password");
@@ -91,92 +92,98 @@ const gambar = document.getElementById("gambar");
 
 /* LOGIN */
 loginBtn.onclick = () => {
-  if (!email.value || !password.value) return alert("Email & Password wajib diisi");
   signInWithEmailAndPassword(auth, email.value, password.value)
-    .catch(err => alert("Login gagal: " + err.message));
+    .catch(err=>alert("Login gagal: "+err.message));
 };
 
-/* RESET */
+/* RESET PASSWORD */
 resetBtn.onclick = () => {
-  if (!email.value) return alert("Masukkan email");
-  sendPasswordResetEmail(auth, email.value)
-    .then(() => alert("📧 Email reset terkirim"))
-    .catch(err => alert(err.message));
+  if(!email.value) return alert("Masukkan email");
+  sendPasswordResetEmail(auth,email.value).then(()=>alert("📧 Email reset terkirim"));
 };
 
 /* BACK TO VISITOR */
 backToVisitor.onclick = () => location.href="index.html";
 
 /* LOGOUT */
-logoutBtn.onclick = async () => {
-  await signOut(auth);
-  location.href="index.html";
-};
+logoutBtn.onclick = async () => { await signOut(auth); location.href="index.html"; };
 
 /* AUTH STATE */
-onAuthStateChanged(auth, user => {
-  if (user) {
+onAuthStateChanged(auth,user=>{
+  if(user){
     loginBox.classList.add("hidden");
     dashboard.classList.remove("hidden");
-    loadProduk();
-  } else {
+    loadProdukPreview();
+  }else{
     loginBox.classList.remove("hidden");
     dashboard.classList.add("hidden");
   }
 });
 
-/* LOAD PRODUK */
-async function loadProduk() {
-  list.innerHTML = "";
-  const snap = await getDocs(collection(db, "produk"));
-  snap.forEach(d => {
-    const p = d.data();
-    list.innerHTML += `
-      <div class="bg-white p-4 rounded-xl shadow mb-3 flex justify-between items-center">
-        <div>
-          <b>${p.nama}</b> <span class="text-gray-500 text-sm">(${p.kategori})</span><br>
-          ${p.deskripsi || ""} <br>
-          <a href="${p.link}" target="_blank" class="text-pink-500 underline text-sm">${p.link}</a>
-        </div>
-        <button onclick="hapus('${d.id}')" class="text-red-500 text-sm">Hapus</button>
-      </div>
-    `;
+/* SIMPAN PRODUK */
+simpanBtn.onclick = async ()=>{
+  if(!nama.value || !link.value || !kategori.value){
+    alert("❌ Nama, Link & Kategori wajib diisi");
+    return;
+  }
+  await addDoc(collection(db,"produk"),{
+    nama:nama.value,
+    deskripsi:deskripsi.value,
+    link:link.value,
+    kategori:kategori.value,
+    gambar:gambar.value || "", // opsional
+    klik:0,
+    createdAt:serverTimestamp()
+  });
+  nama.value=deskripsi.value=link.value=kategori.value=gambar.value="";
+  loadProdukPreview();
+};
+
+/* LOAD PRODUK PER KATEGORI (LAZY LOAD) */
+async function loadProdukPreview(){
+  const snap = await getDocs(collection(db,"produk"));
+  const allProduk = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  const kategoriMap = {skincare:[],fashion:[],home:[]};
+  allProduk.forEach(p=>{ if(kategoriMap[p.kategori]) kategoriMap[p.kategori].push(p); });
+
+  produkList.innerHTML="";
+  Object.entries(kategoriMap).forEach(([key,items])=>{
+    if(items.length===0) return;
+
+    const details = document.createElement("details");
+    details.className="mb-4 border border-pink-200 rounded-xl bg-white shadow";
+    details.innerHTML=`<summary class="cursor-pointer font-bold text-pink-600 p-3">${key.toUpperCase()} (${items.length})</summary>
+      <div class="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>`;
+    const grid = details.querySelector("div");
+
+    // lazy load saat expand
+    details.addEventListener("toggle",()=>{
+      if(details.open && grid.children.length===0){
+        items.forEach(p=>{
+          const card = document.createElement("div");
+          card.className="bg-white p-3 rounded-xl shadow";
+          const imgSrc = p.gambar || "https://via.placeholder.com/400x400/ffe4e6/ec4899?text=Luqqy+Store";
+          card.innerHTML=`<div class="mb-2 rounded-xl overflow-hidden"><img src="${imgSrc}" class="w-full h-36 object-cover"/></div>
+            <h3 class="font-bold text-pink-700">${p.nama}</h3>
+            <p class="text-sm text-gray-500 mb-2">${p.deskripsi||""}</p>
+            <a href="${p.link}" target="_blank" class="block bg-pink-400 hover:bg-pink-500 text-white py-2 rounded-full text-center font-semibold">Lihat Produk</a>
+            <button class="mt-1 bg-red-100 text-red-500 px-2 py-1 rounded" onclick="hapusProduk('${p.id}')">Hapus</button>`;
+          grid.appendChild(card);
+        });
+      }
+    });
+
+    produkList.appendChild(details);
   });
 }
 
 /* HAPUS PRODUK */
-window.hapus = async id => {
-  if (!confirm("Hapus produk?")) return;
-  await deleteDoc(doc(db, "produk", id));
-  loadProduk();
-};
-
-/* SIMPAN PRODUK */
-simpanBtn.onclick = async () => {
-  if (!nama.value || !deskripsi.value || !link.value || !kategori.value) {
-    alert("❌ Nama, Deskripsi, Link & Kategori wajib diisi");
-    return;
+window.hapusProduk = async id=>{
+  if(confirm("Hapus produk ini?")){
+    await deleteDoc(doc(db,"produk",id));
+    loadProdukPreview();
   }
-
-  // CEK DUPLIKASI
-  const q = query(collection(db, "produk"), 
-    where("nama", "==", nama.value.trim()));
-  const snap = await getDocs(q);
-  if (!snap.empty) return alert("❌ Produk dengan nama sama sudah ada");
-
-  await addDoc(collection(db, "produk"), {
-    nama: nama.value.trim(),
-    deskripsi: deskripsi.value.trim(),
-    link: link.value.trim(),
-    kategori: kategori.value,
-    gambar: gambar.value.trim() || "",
-    klik: 0,
-    createdAt: serverTimestamp()
-  });
-
-  alert("✅ Produk berhasil disimpan");
-  nama.value = deskripsi.value = link.value = kategori.value = gambar.value = "";
-  loadProduk();
 };
 </script>
 </body>
