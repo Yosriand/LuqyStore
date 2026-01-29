@@ -42,7 +42,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, increment } 
+import { getFirestore, collection, getDocs, doc, setDoc, increment } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -115,13 +115,14 @@ function renderProduk(data){
       `;
 
       card.querySelector("button").onclick = ()=>{
-        // ⬅️ OPEN DULU (AMAN DARI POPUP BLOCKER)
         window.open(p.link,"_blank");
 
-        // ⬅️ UPDATE DI BELAKANG
-        updateDoc(doc(db,"produk",p.id),{
-          klik: increment(1)
-        }).catch(console.error);
+        // ✅ FIX: KLIK PASTI TERCATAT
+        setDoc(
+          doc(db,"produk",p.id),
+          { klik: increment(1) },
+          { merge:true }
+        ).catch(console.error);
       };
 
       grid.appendChild(card);
