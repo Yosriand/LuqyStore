@@ -83,7 +83,7 @@
     class="w-full md:w-1/2 border p-2 rounded-full shadow"/>
 </div>
 
-<!-- PREVIEW PRODUK -->
+<!-- PRODUK -->
 <h2 class="text-xl font-bold text-pink-600 mb-4">📦 Produk Terdaftar</h2>
 <div id="produkList"
   class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>
@@ -177,7 +177,7 @@ async function loadProduk(){
   renderProduk(semuaProduk);
 }
 
-/* RENDER */
+/* RENDER PRODUK */
 function renderProduk(data){
   produkList.innerHTML="";
 
@@ -186,10 +186,15 @@ function renderProduk(data){
     card.className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
 
     card.innerHTML=`
-      <div class="overflow-hidden rounded-xl mb-3 bg-pink-100">
-        <img src="${p.gambar || 'https://via.placeholder.com/400x400?text=Luqy+Store'}"
-          class="w-full h-44 object-cover"/>
-      </div>
+      ${
+        p.gambar
+          ? `
+            <div class="overflow-hidden rounded-xl mb-3 bg-pink-100">
+              <img src="${p.gambar}" class="w-full h-44 object-cover"/>
+            </div>
+          `
+          : ``
+      }
 
       <h3 class="font-bold text-pink-700">${p.nama}</h3>
       <p class="text-sm text-gray-500 mb-2">${p.deskripsi || ""}</p>
@@ -238,4 +243,3 @@ searchInput.oninput = ()=>{
 
 </body>
 </html>
-
