@@ -130,8 +130,153 @@
 
 <!-- SCRIPT (ASLI – TIDAK DIUBAH) -->
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+/* CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyAgvqSOqTr5zeGFArOWYSaUExCAlwEw2gE",
+  authDomain: "luqqy-store.firebaseapp.com",
+  projectId: "luqqy-store",
+  storageBucket: "luqqy-store.firebasestorage.app",
+  messagingSenderId: "157194853674",
+  appId: "1:157194853674:web:936fac43307d852fedd253"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let editId = null;
+let semuaProduk = [];
+
+/* LOGIN */
+loginBtn.onclick = ()=> {
+  signInWithEmailAndPassword(auth,email.value,password.value)
+    .catch(e=>alert(e.message));
+};
+
+resetBtn.onclick = ()=>{
+  if(!email.value) return alert("Masukkan email");
+  sendPasswordResetEmail(auth,email.value);
+};
+
+logoutBtn.onclick = ()=> signOut(auth);
+
+/* AUTH */
+onAuthStateChanged(auth,user=>{
+  loginBox.classList.toggle("hidden",!!user);
+  dashboard.classList.toggle("hidden",!user);
+  if(user) loadProduk();
+});
+
+/* SIMPAN */
+simpanBtn.onclick = async()=>{
+  if(!nama.value || !link.value || !kategori.value){
+    return alert("❌ Field wajib belum diisi");
+  }
+
+  const data = {
+    nama:nama.value,
+    deskripsi:deskripsi.value,
+    link:link.value,
+    gambar:gambar.value,
+    kategori:kategori.value,
+    klik: 0,
+    createdAt: serverTimestamp()
+  };
+
+  if(editId){
+    delete data.createdAt;
+    delete data.klik;
+    await updateDoc(doc(db,"produk",editId),data);
+    editId=null;
+  }else{
+    await addDoc(collection(db,"produk"),data);
+  }
+
+  nama.value=deskripsi.value=link.value=gambar.value=kategori.value="";
+  loadProduk();
+};
+
+/* LOAD */
+async function loadProduk(){
+  produkList.innerHTML="";
+  semuaProduk=[];
+  const snap = await getDocs(collection(db,"produk"));
+
+  snap.forEach(d=>{
+    semuaProduk.push({ id:d.id, ...d.data() });
+  });
+
+  renderProduk(semuaProduk);
+}
+
+/* RENDER PRODUK */
+function renderProduk(data){
+  produkList.innerHTML="";
+
+  data.forEach(p=>{
+    const card=document.createElement("div");
+    card.className="bg-white rounded-2xl shadow hover:shadow-lg transition p-4";
+
+    card.innerHTML=`
+      ${p.gambar ? `
+        <div class="overflow-hidden rounded-xl mb-3 bg-pink-100">
+          <img src="${p.gambar}" class="w-full h-44 object-cover"/>
+        </div>` : ``}
+
+      <h3 class="font-bold text-pink-700">${p.nama}</h3>
+      <p class="text-sm text-gray-500 mb-2">${p.deskripsi || ""}</p>
+      <p class="text-xs text-gray-400 mb-3">👁 ${p.klik || 0} klik</p>
+
+      <div class="flex gap-2 flex-wrap">
+        <button class="view bg-blue-500 text-white px-3 py-1 rounded-full text-sm">View</button>
+        <button class="edit bg-yellow-400 text-white px-3 py-1 rounded-full text-sm">Edit</button>
+        <button class="hapus bg-red-500 text-white px-3 py-1 rounded-full text-sm">Hapus</button>
+      </div>
+    `;
+
+    card.querySelector(".view").onclick=()=>window.open(p.link,"_blank");
+
+    card.querySelector(".edit").onclick=()=>{
+      editId=p.id;
+      nama.value=p.nama;
+      deskripsi.value=p.deskripsi;
+      link.value=p.link;
+      gambar.value=p.gambar;
+      kategori.value=p.kategori;
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
+
+    card.querySelector(".hapus").onclick=async()=>{
+      if(confirm("Hapus produk?")){
+        await deleteDoc(doc(db,"produk",p.id));
+        loadProduk();
+      }
+    };
+
+    produkList.appendChild(card);
+  });
+}
+
+/* SEARCH */
+searchInput.oninput = ()=>{
+  const q = searchInput.value.toLowerCase();
+  const hasil = semuaProduk.filter(p =>
+    p.nama.toLowerCase().includes(q) ||
+    p.kategori.toLowerCase().includes(q)
+  );
+  renderProduk(hasil);
+};
+</script>
+
 /* === JS AND FIREBASE TETAP SAMA PERSIS === */
 </script>
 
 </body>
 </html>
+
