@@ -28,6 +28,11 @@
   <p class="text-gray-500 text-sm sm:text-base">
     Produk terbaik, terpercaya, dan sudah dikurasi 💖
   </p>
+
+  <!-- SEARCH -->
+  <input id="searchInput"
+    placeholder="🔍 Cari produk..."
+    class="mt-5 w-full sm:w-1/2 border p-2 rounded-full shadow"/>
 </section>
 
 <!-- PRODUK -->
@@ -59,16 +64,30 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const produkList = document.getElementById("produkList");
+const searchInput = document.getElementById("searchInput");
+
+let semuaProduk = [];
 
 /* LOAD PRODUK */
 async function loadProduk(){
   const snap = await getDocs(collection(db,"produk"));
-  const kategoriMap = {};
+  semuaProduk = [];
 
   snap.forEach(d=>{
-    const p = d.data();
+    semuaProduk.push({ id:d.id, ...d.data() });
+  });
+
+  renderProduk(semuaProduk);
+}
+
+/* RENDER */
+function renderProduk(data){
+  produkList.innerHTML="";
+  const kategoriMap = {};
+
+  data.forEach(p=>{
     if(!kategoriMap[p.kategori]) kategoriMap[p.kategori]=[];
-    kategoriMap[p.kategori].push({id:d.id,...p});
+    kategoriMap[p.kategori].push(p);
   });
 
   Object.keys(kategoriMap).forEach(cat=>{
@@ -99,7 +118,8 @@ async function loadProduk(){
           <span>👁 ${p.klik || 0} klik</span>
         </div>
 
-        <button class="mt-3 bg-pink-500 text-white py-2 rounded-full hover:bg-pink-600 transition">
+        <button type="button"
+          class="mt-3 bg-pink-500 text-white py-2 rounded-full hover:bg-pink-600 transition">
           Lihat Produk
         </button>
       `;
@@ -117,6 +137,16 @@ async function loadProduk(){
     produkList.appendChild(section);
   });
 }
+
+/* SEARCH */
+searchInput.oninput = ()=>{
+  const q = searchInput.value.toLowerCase();
+  const hasil = semuaProduk.filter(p =>
+    p.nama.toLowerCase().includes(q) ||
+    p.kategori.toLowerCase().includes(q)
+  );
+  renderProduk(hasil);
+};
 
 loadProduk();
 </script>
